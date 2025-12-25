@@ -165,17 +165,6 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
               );
             },
           ),
-          // ===== 撤销删除按钮 =====
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
-            right: 16,
-            child: IconButton(
-              icon: const Icon(Icons.undo),
-              color: Colors.white,
-              onPressed: _deletedStack.isEmpty ? null : _undoDelete,
-              tooltip: '撤销删除',
-            ),
-          ),
           Positioned(
             top: 0,
             left: 0,
@@ -190,6 +179,17 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
                   child: Icon(Icons.delete, color: Colors.white, size: 36),
                 ),
               ),
+            ),
+          ),
+          // ===== 撤销删除按钮 =====
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            right: 16,
+            child: IconButton(
+              icon: const Icon(Icons.undo),
+              color: Colors.white,
+              onPressed: _deletedStack.isEmpty ? null : _undoDelete,
+              tooltip: '撤销删除',
             ),
           ),
         ],
