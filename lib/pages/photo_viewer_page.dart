@@ -16,7 +16,8 @@ class PhotoViewerPage extends StatefulWidget {
   State<PhotoViewerPage> createState() => _PhotoViewerPageState();
 }
 
-class _PhotoViewerPageState extends State<PhotoViewerPage> {
+class _PhotoViewerPageState extends State<PhotoViewerPage>
+    with SingleTickerProviderStateMixin {
   late final PageController _controller;
   late final TransformationController _transformationController;
   TapDownDetails? _doubleTapDetails;
@@ -27,12 +28,38 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
 
   double _dragOffsetY = 0.0;
 
+  late AnimationController _deleteAnimController;
+  late Animation<double> _deleteAnim;
+
+  bool _isDeleting = false;
+
   @override
   void initState() {
     super.initState();
     _controller = PageController(initialPage: widget.initialIndex);
     _transformationController = TransformationController();
     _visiblePhotos = List.of(widget.photos);
+
+    _deleteAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+
+    _deleteAnim =
+        Tween<double>(
+          begin: 0.0,
+          end: -1.0, // 向上飞出
+        ).animate(
+          CurvedAnimation(parent: _deleteAnimController, curve: Curves.easeIn),
+        );
+
+    _deleteAnimController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _deleteAnimController.reset();
+        _isDeleting = false;
+        _deleteCurrentPhoto();
+      }
+    });
   }
 
   void _deleteCurrentPhoto() {
@@ -75,6 +102,14 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
   }
 
   @override
+  void dispose() {
+    _deleteAnimController.dispose();
+    _controller.dispose();
+    _transformationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
@@ -95,6 +130,10 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
             },
             itemBuilder: (context, index) {
               final asset = _visiblePhotos[index];
+              final deleteOffset = (_isDeleting && index == _currentIndex)
+                  ? _deleteAnimController.value *
+                        MediaQuery.of(context).size.height
+                  : 0.0;
               return GestureDetector(
                 onDoubleTapDown: (details) {
                   _doubleTapDetails = details;
@@ -121,18 +160,19 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
                 onVerticalDragEnd: (details) {
                   const deleteThreshold = -150;
 
+                  if (_isDeleting) return;
+
                   if (_dragOffsetY < deleteThreshold) {
                     _dragOffsetY = 0;
-                    _deleteCurrentPhoto();
+                    setState(() {
+                      _isDeleting = true;
+                    });
+                    _deleteAnimController.forward();
                   } else {
                     setState(() {
                       _dragOffsetY = 0;
                     });
                   }
-                  // if (details.primaryVelocity != null &&
-                  //     details.primaryVelocity! < -300) {
-                  //   _deleteCurrentPhoto();
-                  // }
                 },
                 onVerticalDragUpdate: (details) {
                   setState(() {
@@ -144,7 +184,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
                   });
                 },
                 child: Transform.translate(
-                  offset: Offset(0, _dragOffsetY),
+                  offset: Offset(0, _dragOffsetY + deleteOffset),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     // transform: Matrix4.translationValues(0, 0, 0),
