@@ -43,7 +43,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
     setState(() {
       _deletedStack.add(_DeletedPhoto(asset, _currentIndex));
       _visiblePhotos.removeAt(_currentIndex);
-      debugPrint("删除的照片 id：${_currentIndex}");
+      debugPrint("删除的照片 id：$_currentIndex");
       debugPrint(
         "当前相册长度：${_visiblePhotos.length}, 已删除照片数量：${_deletedStack.length}",
       );
@@ -119,10 +119,20 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
                   }
                 },
                 onVerticalDragEnd: (details) {
-                  if (details.primaryVelocity != null &&
-                      details.primaryVelocity! < -300) {
+                  const deleteThreshold = -150;
+
+                  if (_dragOffsetY < deleteThreshold) {
+                    _dragOffsetY = 0;
                     _deleteCurrentPhoto();
+                  } else {
+                    setState(() {
+                      _dragOffsetY = 0;
+                    });
                   }
+                  // if (details.primaryVelocity != null &&
+                  //     details.primaryVelocity! < -300) {
+                  //   _deleteCurrentPhoto();
+                  // }
                 },
                 onVerticalDragUpdate: (details) {
                   setState(() {
@@ -135,15 +145,19 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
                 },
                 child: Transform.translate(
                   offset: Offset(0, _dragOffsetY),
-                  child: InteractiveViewer(
-                    transformationController: _transformationController,
-                    minScale: 1.0,
-                    maxScale: 4.0,
-                    child: Center(
-                      child: AssetEntityImage(
-                        asset,
-                        isOriginal: false,
-                        fit: BoxFit.contain,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    // transform: Matrix4.translationValues(0, 0, 0),
+                    child: InteractiveViewer(
+                      transformationController: _transformationController,
+                      minScale: 1.0,
+                      maxScale: 4.0,
+                      child: Center(
+                        child: AssetEntityImage(
+                          asset,
+                          isOriginal: false,
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
                   ),
@@ -160,6 +174,22 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
               color: Colors.white,
               onPressed: _deletedStack.isEmpty ? null : _undoDelete,
               tooltip: '撤销删除',
+            ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 120,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 150),
+              opacity: _dragOffsetY < -50 ? 0.8 : 0.0,
+              child: Container(
+                color: const Color.fromARGB(255, 132, 31, 23).withValues(),
+                child: const Center(
+                  child: Icon(Icons.delete, color: Colors.white, size: 36),
+                ),
+              ),
             ),
           ),
         ],
