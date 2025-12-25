@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'photo_viewer_page.dart';
+import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 
 class PhotoGridPage extends StatefulWidget {
   final String title;
@@ -75,17 +77,22 @@ class _PhotoGridPageState extends State<PhotoGridPage> {
         ),
         itemCount: _photos.length,
         itemBuilder: (context, index) {
-          final asset = _photos[index];
-
-          return FutureBuilder<Uint8List?>(
-            future: asset.thumbnailDataWithSize(const ThumbnailSize(300, 300)),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return Container(color: Colors.grey.shade300);
-              }
-
-              return Image.memory(snapshot.data!, fit: BoxFit.cover);
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      PhotoViewerPage(photos: _photos, initialIndex: index),
+                ),
+              );
             },
+            child: AssetEntityImage(
+              _photos[index],
+              isOriginal: false,
+              thumbnailSize: const ThumbnailSize(200, 200),
+              fit: BoxFit.cover,
+            ),
           );
         },
       ),
