@@ -20,12 +20,21 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
   late final PageController _controller;
   late final TransformationController _transformationController;
   TapDownDetails? _doubleTapDetails;
+  int _currentIndex = 0;
+
+  late List<AssetEntity> _visiblePhotos; // 当前可浏览照片
+  final List<_DeletedPhoto> _deletedStack = [];
 
   @override
   void initState() {
     super.initState();
     _controller = PageController(initialPage: widget.initialIndex);
     _transformationController = TransformationController();
+    _visiblePhotos = List.of(widget.photos);
+  }
+
+  void _deleteCurrentPhoto() {
+    debugPrint("删除照片");
   }
 
   @override
@@ -34,12 +43,13 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
       backgroundColor: Colors.black,
       body: PageView.builder(
         controller: _controller,
-        itemCount: widget.photos.length,
-        onPageChanged: (_) {
+        itemCount: _visiblePhotos.length,
+        onPageChanged: (index) {
+          _currentIndex = index;
           _transformationController.value = Matrix4.identity();
         },
         itemBuilder: (context, index) {
-          final asset = widget.photos[index];
+          final asset = _visiblePhotos[index];
           return GestureDetector(
             onDoubleTapDown: (details) {
               _doubleTapDetails = details;
@@ -63,6 +73,12 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
                   ..scaleByDouble(3.0, 3.0, 1.0, 1.0);
               }
             },
+            onVerticalDragEnd: (details) {
+              if (details.primaryVelocity != null &&
+                  details.primaryVelocity! < -300) {
+                _deleteCurrentPhoto();
+              }
+            },
             child: InteractiveViewer(
               transformationController: _transformationController,
               minScale: 1.0,
@@ -80,4 +96,11 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
       ),
     );
   }
+}
+
+class _DeletedPhoto {
+  final AssetEntity photo;
+  final int index;
+
+  _DeletedPhoto(this.photo, this.index);
 }
