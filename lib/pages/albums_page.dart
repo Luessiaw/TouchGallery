@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 import '../services/media_service.dart';
 import 'photo_grid_page.dart';
+import 'dart:typed_data';
 
 class AlbumsPage extends StatefulWidget {
   const AlbumsPage({super.key});
@@ -69,30 +70,58 @@ class _AlbumsPageState extends State<AlbumsPage> {
                 ),
               );
             },
-            child: Container(
-              color: Colors.blueGrey,
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.photo_album, color: Colors.white),
-                  const SizedBox(height: 8),
-                  Text(
-                    album.name,
-                    style: const TextStyle(color: Colors.white),
-                    textAlign: TextAlign.center,
+            child: Stack(
+              children: [
+                Positioned.fill(child: AlbumCover(album: album)),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    color: Colors.black54,
+                    child: Text(
+                      album.name,
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  // Text(
-                  //   '${album.assetCount} 张',
-                  //   style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  // ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },
       ),
+    );
+  }
+}
+
+class AlbumCover extends StatelessWidget {
+  final AssetPathEntity album;
+
+  const AlbumCover({super.key, required this.album});
+
+  Future<Uint8List?> _loadCover() async {
+    final assets = await album.getAssetListPaged(page: 0, size: 1);
+    if (assets.isEmpty) return null;
+
+    return await assets.first.thumbnailDataWithSize(
+      const ThumbnailSize(400, 400),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Uint8List?>(
+      future: _loadCover(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Container(color: Colors.grey.shade400);
+        }
+
+        return Image.memory(snapshot.data!, fit: BoxFit.cover);
+      },
     );
   }
 }
