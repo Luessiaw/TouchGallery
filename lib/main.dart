@@ -1,17 +1,55 @@
 import 'package:flutter/material.dart';
-import 'screens/albums_page.dart'; // 引入相册页面
+import 'pages/albums_page.dart';
+import 'pages/timeline_page.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const PhotoManagerApp());
 }
 
-class MyApp extends StatelessWidget {
+class PhotoManagerApp extends StatelessWidget {
+  const PhotoManagerApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '照片管理',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: AlbumsPage(), // 设置启动页为相册页面
+      title: 'Photo Manager',
+      theme: ThemeData(useMaterial3: true),
+      home: const MainPage(),
+    );
+  }
+}
+
+class MainPage extends StatefulWidget {
+  const MainPage({super.key});
+
+  @override
+  State<MainPage> createState() => _MainPageState();
+}
+
+class _MainPageState extends State<MainPage> {
+  int _currentIndex = 0;
+
+  final _pages = const [AlbumsPage(), TimelinePage()];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _pages[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.photo_album), label: '相册'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: '日期',
+          ),
+        ],
+      ),
     );
   }
 }
