@@ -41,6 +41,10 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
     setState(() {
       _deletedStack.add(_DeletedPhoto(asset, _currentIndex));
       _visiblePhotos.removeAt(_currentIndex);
+      debugPrint("删除的照片 id：${_currentIndex}");
+      debugPrint(
+        "当前相册长度：${_visiblePhotos.length}, 已删除照片数量：${_deletedStack.length}",
+      );
 
       if (_currentIndex >= _visiblePhotos.length) {
         _currentIndex = _visiblePhotos.length - 1;
@@ -48,62 +52,103 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
     });
   }
 
+  void _undoDelete() {
+    if (_deletedStack.isEmpty) return;
+
+    final last = _deletedStack.removeLast();
+
+    setState(() {
+      _visiblePhotos.insert(last.index, last.photo);
+      _currentIndex = last.index;
+      debugPrint("撤销删除的照片 id：${last.index}");
+      debugPrint(
+        "当前相册长度：${_visiblePhotos.length}, 已删除照片数量：${_deletedStack.length}",
+      );
+    });
+
+    // 等待一帧，确保 PageView 已更新 itemCount
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _controller.jumpToPage(last.index);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: PageView.builder(
-        controller: _controller,
-        itemCount: _visiblePhotos.length,
-        onPageChanged: (index) {
-          _currentIndex = index;
-          _transformationController.value = Matrix4.identity();
-        },
-        itemBuilder: (context, index) {
-          final asset = _visiblePhotos[index];
-          return GestureDetector(
-            onDoubleTapDown: (details) {
-              _doubleTapDetails = details;
-            },
-            onDoubleTap: () {
-              final position = _doubleTapDetails!.localPosition;
-
-              final currentScale = _transformationController.value
-                  .getMaxScaleOnAxis();
-
-              if (currentScale > 1.0) {
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: _controller,
+            itemCount: _visiblePhotos.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentIndex = index;
                 _transformationController.value = Matrix4.identity();
-              } else {
-                _transformationController.value = Matrix4.identity()
-                  ..translateByDouble(
-                    -position.dx * 1.5,
-                    -position.dy * 1.5,
-                    0.0,
-                    1.0,
-                  )
-                  ..scaleByDouble(3.0, 3.0, 1.0, 1.0);
-              }
+                debugPrint("当前查看的照片 id：$index");
+                debugPrint(
+                  "当前相册长度：${_visiblePhotos.length}, 已删除照片数量：${_deletedStack.length}",
+                );
+              });
             },
-            onVerticalDragEnd: (details) {
-              if (details.primaryVelocity != null &&
-                  details.primaryVelocity! < -300) {
-                _deleteCurrentPhoto();
-              }
-            },
-            child: InteractiveViewer(
-              transformationController: _transformationController,
-              minScale: 1.0,
-              maxScale: 4.0,
-              child: Center(
-                child: AssetEntityImage(
-                  asset,
-                  isOriginal: false,
-                  fit: BoxFit.contain,
+            itemBuilder: (context, index) {
+              final asset = _visiblePhotos[index];
+              return GestureDetector(
+                onDoubleTapDown: (details) {
+                  _doubleTapDetails = details;
+                },
+                onDoubleTap: () {
+                  final position = _doubleTapDetails!.localPosition;
+
+                  final currentScale = _transformationController.value
+                      .getMaxScaleOnAxis();
+
+                  if (currentScale > 1.0) {
+                    _transformationController.value = Matrix4.identity();
+                  } else {
+                    _transformationController.value = Matrix4.identity()
+                      ..translateByDouble(
+                        -position.dx * 1.5,
+                        -position.dy * 1.5,
+                        0.0,
+                        1.0,
+                      )
+                      ..scaleByDouble(3.0, 3.0, 1.0, 1.0);
+                  }
+                },
+                onVerticalDragEnd: (details) {
+                  if (details.primaryVelocity != null &&
+                      details.primaryVelocity! < -300) {
+                    _deleteCurrentPhoto();
+                  }
+                },
+                child: InteractiveViewer(
+                  transformationController: _transformationController,
+                  minScale: 1.0,
+                  maxScale: 4.0,
+                  child: Center(
+                    child: AssetEntityImage(
+                      asset,
+                      isOriginal: false,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
-              ),
+              );
+            },
+          ),
+          // ===== 撤销删除按钮 =====
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            right: 16,
+            child: IconButton(
+              icon: const Icon(Icons.undo),
+              color: Colors.white,
+              onPressed: _deletedStack.isEmpty ? null : _undoDelete,
+              tooltip: '撤销删除',
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
