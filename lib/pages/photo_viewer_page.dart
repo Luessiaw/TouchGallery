@@ -25,6 +25,8 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
   late List<AssetEntity> _visiblePhotos; // 当前可浏览照片
   final List<_DeletedPhoto> _deletedStack = [];
 
+  double _dragOffsetY = 0.0;
+
   @override
   void initState() {
     super.initState();
@@ -122,15 +124,27 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
                     _deleteCurrentPhoto();
                   }
                 },
-                child: InteractiveViewer(
-                  transformationController: _transformationController,
-                  minScale: 1.0,
-                  maxScale: 4.0,
-                  child: Center(
-                    child: AssetEntityImage(
-                      asset,
-                      isOriginal: false,
-                      fit: BoxFit.contain,
+                onVerticalDragUpdate: (details) {
+                  setState(() {
+                    _dragOffsetY += details.delta.dy;
+                    // 只允许向上拖（负值）
+                    if (_dragOffsetY > 0) {
+                      _dragOffsetY = 0;
+                    }
+                  });
+                },
+                child: Transform.translate(
+                  offset: Offset(0, _dragOffsetY),
+                  child: InteractiveViewer(
+                    transformationController: _transformationController,
+                    minScale: 1.0,
+                    maxScale: 4.0,
+                    child: Center(
+                      child: AssetEntityImage(
+                        asset,
+                        isOriginal: false,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
                 ),
