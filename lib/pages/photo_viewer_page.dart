@@ -33,6 +33,9 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
 
   bool _isDeleting = false;
 
+  bool get _isZoomed =>
+      _transformationController.value.getMaxScaleOnAxis() > 1.01;
+
   @override
   void initState() {
     super.initState();
@@ -118,6 +121,9 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
           PageView.builder(
             controller: _controller,
             itemCount: _visiblePhotos.length,
+            physics: _isZoomed
+                ? const NeverScrollableScrollPhysics()
+                : const PageScrollPhysics(),
             onPageChanged: (index) {
               setState(() {
                 _currentIndex = index;
@@ -135,6 +141,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                         MediaQuery.of(context).size.height
                   : 0.0;
               return GestureDetector(
+                behavior: HitTestBehavior.translucent,
                 onDoubleTapDown: (details) {
                   _doubleTapDetails = details;
                 },
@@ -157,32 +164,36 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                       ..scaleByDouble(3.0, 3.0, 1.0, 1.0);
                   }
                 },
-                onVerticalDragEnd: (details) {
-                  const deleteThreshold = -150;
+                onVerticalDragEnd: _isZoomed
+                    ? null
+                    : (details) {
+                        const deleteThreshold = -150;
 
-                  if (_isDeleting) return;
+                        if (_isDeleting) return;
 
-                  if (_dragOffsetY < deleteThreshold) {
-                    _dragOffsetY = 0;
-                    setState(() {
-                      _isDeleting = true;
-                    });
-                    _deleteAnimController.forward();
-                  } else {
-                    setState(() {
-                      _dragOffsetY = 0;
-                    });
-                  }
-                },
-                onVerticalDragUpdate: (details) {
-                  setState(() {
-                    _dragOffsetY += details.delta.dy;
-                    // 只允许向上拖（负值）
-                    if (_dragOffsetY > 0) {
-                      _dragOffsetY = 0;
-                    }
-                  });
-                },
+                        if (_dragOffsetY < deleteThreshold) {
+                          _dragOffsetY = 0;
+                          setState(() {
+                            _isDeleting = true;
+                          });
+                          _deleteAnimController.forward();
+                        } else {
+                          setState(() {
+                            _dragOffsetY = 0;
+                          });
+                        }
+                      },
+                onVerticalDragUpdate: _isZoomed
+                    ? null
+                    : (details) {
+                        setState(() {
+                          _dragOffsetY += details.delta.dy;
+                          // 只允许向上拖（负值）
+                          if (_dragOffsetY > 0) {
+                            _dragOffsetY = 0;
+                          }
+                        });
+                      },
                 child: Transform.translate(
                   offset: Offset(0, _dragOffsetY + deleteOffset),
                   child: AnimatedContainer(
@@ -190,6 +201,8 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                     // transform: Matrix4.translationValues(0, 0, 0),
                     child: InteractiveViewer(
                       transformationController: _transformationController,
+                      panEnabled: true,
+                      scaleEnabled: true,
                       minScale: 1.0,
                       maxScale: 4.0,
                       child: Center(
