@@ -34,7 +34,18 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
   }
 
   void _deleteCurrentPhoto() {
-    debugPrint("删除照片");
+    if (_currentIndex < 0 || _currentIndex >= _visiblePhotos.length) return;
+
+    final asset = _visiblePhotos[_currentIndex];
+
+    setState(() {
+      _deletedStack.add(_DeletedPhoto(asset, _currentIndex));
+      _visiblePhotos.removeAt(_currentIndex);
+
+      if (_currentIndex >= _visiblePhotos.length) {
+        _currentIndex = _visiblePhotos.length - 1;
+      }
+    });
   }
 
   @override
