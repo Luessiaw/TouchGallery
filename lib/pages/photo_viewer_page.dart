@@ -35,6 +35,9 @@ class _PhotoViewerPageState extends State<PhotoViewerPage> {
       body: PageView.builder(
         controller: _controller,
         itemCount: widget.photos.length,
+        onPageChanged: (_) {
+          _transformationController.value = Matrix4.identity();
+        },
         itemBuilder: (context, index) {
           final asset = widget.photos[index];
           return GestureDetector(
