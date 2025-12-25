@@ -15,12 +15,9 @@ class TimelinePage extends StatelessWidget {
             title: Text('2025-01-${index + 1}'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Navigator.push(
+              ScaffoldMessenger.of(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => PhotoGridPage(title: '2025-01-${index + 1}'),
-                ),
-              );
+              ).showSnackBar(const SnackBar(content: Text('按日期分组将在后续步骤实现')));
             },
           );
         },
