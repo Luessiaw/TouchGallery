@@ -29,7 +29,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   double _dragOffsetY = 0.0;
 
   late AnimationController _deleteAnimController;
-  late Animation<double> _deleteAnim;
+  // late Animation<double> _deleteAnim;
 
   bool _isDeleting = false;
 
@@ -48,13 +48,13 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       duration: const Duration(milliseconds: 250),
     );
 
-    _deleteAnim =
-        Tween<double>(
-          begin: 0.0,
-          end: -1.0, // 向上飞出
-        ).animate(
-          CurvedAnimation(parent: _deleteAnimController, curve: Curves.easeIn),
-        );
+    // _deleteAnim =
+    //     Tween<double>(
+    //       begin: 0.0,
+    //       end: -1.0, // 向上飞出
+    //     ).animate(
+    //       CurvedAnimation(parent: _deleteAnimController, curve: Curves.easeIn),
+    //     );
 
     _deleteAnimController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
