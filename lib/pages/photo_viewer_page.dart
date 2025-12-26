@@ -82,7 +82,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
 
     // 找到链表的头结点：lastIndex == null 或者链表中没有对应 lastIndex 的
     _Photo? head = photos.firstWhere(
-      (p) => p.last == null,
+      (p) => (p.last == null && p.state == 0),
       orElse: () => photos.first,
     );
 
@@ -107,6 +107,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     setState(() {
       _Photo photo = _popPhoto();
       photo.state = 1;
+      _visiblePhotos = getVisiblePhotos(_photos);
       debugPrint("@@照片已标记为：删除。");
     });
   }
@@ -120,6 +121,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       _Photo photo = _popPhoto();
       photo.state = 2;
       photo.targetAlbum = album;
+      _visiblePhotos = getVisiblePhotos(_photos);
       debugPrint("@@照片已标记为：移动。target album: ${album.name}");
     });
   }
@@ -136,7 +138,6 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     if (next != null) {
       next.last = last;
     }
-    _visiblePhotos = getVisiblePhotos(_photos);
 
     if (_pageIndex >= _visiblePhotos.length) {
       _pageIndex = _visiblePhotos.length - 1;
