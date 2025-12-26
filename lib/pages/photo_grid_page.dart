@@ -7,8 +7,14 @@ import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 class PhotoGridPage extends StatefulWidget {
   final String title;
   final AssetPathEntity album;
+  final List<AssetPathEntity> allAlbums;
 
-  const PhotoGridPage({super.key, required this.title, required this.album});
+  const PhotoGridPage({
+    super.key,
+    required this.title,
+    required this.album,
+    required this.allAlbums,
+  });
 
   @override
   State<PhotoGridPage> createState() => _PhotoGridPageState();
@@ -82,8 +88,12 @@ class _PhotoGridPageState extends State<PhotoGridPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) =>
-                      PhotoViewerPage(photos: _photos, initialIndex: index),
+                  builder: (_) => PhotoViewerPage(
+                    photos: _photos,
+                    initialIndex: index,
+                    currentAlbum: widget.album,
+                    allAlbums: widget.allAlbums,
+                  ),
                 ),
               );
             },

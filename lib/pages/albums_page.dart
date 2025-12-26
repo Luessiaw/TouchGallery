@@ -65,8 +65,11 @@ class _AlbumsPageState extends State<AlbumsPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) =>
-                      PhotoGridPage(title: album.name, album: album),
+                  builder: (_) => PhotoGridPage(
+                    title: album.name,
+                    album: album,
+                    allAlbums: _albums,
+                  ),
                 ),
               );
             },

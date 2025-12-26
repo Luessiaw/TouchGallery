@@ -5,11 +5,15 @@ import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 class PhotoViewerPage extends StatefulWidget {
   final List<AssetEntity> photos;
   final int initialIndex;
+  final AssetPathEntity currentAlbum;
+  final List<AssetPathEntity> allAlbums;
 
   const PhotoViewerPage({
     super.key,
     required this.photos,
     required this.initialIndex,
+    required this.currentAlbum,
+    required this.allAlbums,
   });
 
   @override
@@ -25,6 +29,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
 
   late List<AssetEntity> _visiblePhotos; // 当前可浏览照片
   final List<_DeletedPhoto> _deletedStack = [];
+  final List<_MovedPhoto> _movedStack = [];
 
   double _dragOffsetY = 0.0;
 
@@ -77,6 +82,22 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       debugPrint(
         "当前相册长度：${_visiblePhotos.length}, 已删除照片数量：${_deletedStack.length}",
       );
+
+      if (_currentIndex >= _visiblePhotos.length) {
+        _currentIndex = _visiblePhotos.length - 1;
+      }
+    });
+  }
+
+  void _moveCurrentPhotoToAlbum(AssetPathEntity targetAlbum) {
+    if (_currentIndex < 0 || _currentIndex >= _visiblePhotos.length) return;
+
+    final photo = _visiblePhotos[_currentIndex];
+
+    setState(() {
+      _movedStack.add(_MovedPhoto(photo, targetAlbum, _currentIndex));
+
+      _visiblePhotos.removeAt(_currentIndex);
 
       if (_currentIndex >= _visiblePhotos.length) {
         _currentIndex = _visiblePhotos.length - 1;
@@ -247,6 +268,89 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
           ),
         ],
       ),
+      bottomNavigationBar: _buildAlbumActionBar(),
+    );
+  }
+
+  Widget _buildAlbumActionBar() {
+    return SizedBox(
+      height: 96,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemCount: widget.allAlbums.length + 1,
+        itemBuilder: (context, index) {
+          if (index == widget.allAlbums.length) {
+            // 新建相册占位
+            return _buildCreateAlbumButton();
+          }
+
+          final album = widget.allAlbums[index];
+          final isCurrent = album.id == widget.currentAlbum.id;
+
+          return _buildAlbumButton(album: album, disabled: isCurrent);
+        },
+      ),
+    );
+  }
+
+  Widget _buildAlbumButton({
+    required AssetPathEntity album,
+    required bool disabled,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.arrow_downward,
+            color: disabled ? Colors.grey : Colors.white,
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            width: 64,
+            child: Text(
+              album.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: disabled ? Colors.grey : Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCreateAlbumButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: GestureDetector(
+        onTap: () {
+          debugPrint('新建相册（占位）');
+        },
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.add, color: Colors.white),
+            SizedBox(height: 6),
+            SizedBox(
+              width: 64,
+              child: Text(
+                '新建',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -256,4 +360,12 @@ class _DeletedPhoto {
   final int index;
 
   _DeletedPhoto(this.photo, this.index);
+}
+
+class _MovedPhoto {
+  final AssetEntity photo;
+  final AssetPathEntity targetAlbum;
+  final int originalIndex;
+
+  _MovedPhoto(this.photo, this.targetAlbum, this.originalIndex);
 }
