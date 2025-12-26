@@ -72,7 +72,9 @@ class _AlbumsPageState extends State<AlbumsPage> {
                     allAlbums: _albums,
                   ),
                 ),
-              );
+              ).then((_) async {
+                await _loadAlbums();
+              });
             },
             child: Stack(
               children: [

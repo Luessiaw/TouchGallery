@@ -33,9 +33,12 @@ class MediaService {
 
     debugPrint("获取相册");
     for (final album in albums) {
+      if (album.name == "Recent") {
+        continue;
+      }
       debugPrint('相册: ${album.name}');
     }
-
+    albums.removeWhere((e) => e.name == "Recent");
     return albums;
   }
 }
