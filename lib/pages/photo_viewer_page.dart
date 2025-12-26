@@ -202,13 +202,13 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     return Scaffold(
       appBar: AppBar(
         title: const Text('照片查看'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            tooltip: '应用更改',
-            onPressed: _applyChanges,
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.check),
+        //     tooltip: '应用更改',
+        //     onPressed: _applyChanges,
+        //   ),
+        // ],
       ),
       backgroundColor: Colors.black,
       body: Column(
@@ -352,7 +352,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
