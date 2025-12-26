@@ -27,10 +27,9 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   TapDownDetails? _doubleTapDetails;
   int _currentPageIndex = 0;
 
-  late List<_Photo> _visiblePhotos = []; // 当前可浏览照片
   final List<_Photo> _photos = [];
-  final List<_DeletedPhoto> _deletedStack = [];
-  // final List<_MovedPhoto> _movedStack = [];
+  late List<_Photo> _visiblePhotos = []; // 当前可浏览照片
+  final List<_Photo> _changedPhotos = [];
 
   double _dragOffsetY = 0.0;
 
@@ -98,23 +97,33 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   }
 
   void _deleteCurrentPhoto() {
-    // if (_currentPageIndex < 0 || _currentPageIndex >= _visiblePhotos.length) return;
+    if (_currentPageIndex < 0 || _currentPageIndex >= _visiblePhotos.length) {
+      return;
+    }
 
-    // final asset = _visiblePhotos[_currentPageIndex];
+    final photo = _visiblePhotos[_currentPageIndex];
+    final lastIndex = photo.lastIndex;
+    final nextIndex = photo.nextIndex;
+    debugPrint(
+      "删除照片。 index=${photo.index}, lastIndex=$lastIndex, nextIdex=$nextIndex, pageIndex=$_currentPageIndex.",
+    );
 
-    // setState(() {
-    //   _deletedStack.add(_DeletedPhoto(asset, _currentPageIndex));
-    //   _visiblePhotos.removeAt(_currentPageIndex);
-    //   debugPrint("删除的照片 id：$_currentPageIndex");
-    //   debugPrint(
-    //     "当前相册长度：${_visiblePhotos.length}, 已删除照片数量：${_deletedStack.length}",
-    //   );
-    //   debugPrint("_deletedStack: $_deletedStack");
+    setState(() {
+      photo.pageIndex = _currentPageIndex;
+      photo.state = 1;
+      _changedPhotos.add(photo);
+      if (lastIndex != null) {
+        _photos[lastIndex].nextIndex = nextIndex;
+      }
+      if (nextIndex != null) {
+        _photos[nextIndex].lastIndex = lastIndex;
+      }
+      _visiblePhotos.removeAt(_currentPageIndex);
 
-    //   if (_currentPageIndex >= _visiblePhotos.length) {
-    //     _currentPageIndex = _visiblePhotos.length - 1;
-    //   }
-    // });
+      if (_currentPageIndex >= _visiblePhotos.length) {
+        _currentPageIndex = _visiblePhotos.length - 1;
+      }
+    });
   }
 
   // void _moveCurrentPhotoToAlbum(AssetPathEntity targetAlbum) {
@@ -123,7 +132,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   //   final photo = _visiblePhotos[_currentPageIndex];
 
   //   setState(() {
-  //     _movedStack.add(_MovedPhoto(photo, targetAlbum, _currentPageIndex));
+  //     _movedPhotos.add(_MovedPhoto(photo, targetAlbum, _currentPageIndex));
 
   //     _visiblePhotos.removeAt(_currentPageIndex);
 
@@ -133,24 +142,41 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   //   });
   // }
 
-  void _undoDelete() {
-    // if (_deletedStack.isEmpty) return;
+  void _undo() {
+    if (_changedPhotos.isEmpty) return;
 
-    // final last = _deletedStack.removeLast();
+    final photo = _changedPhotos.removeLast();
+    final lastIndex = photo.lastIndex;
+    final nextIndex = photo.nextIndex;
+    final pageIndex = photo.pageIndex;
+    final index = photo.index;
 
-    // setState(() {
-    //   _visiblePhotos.insert(last.index, last.photo);
-    //   _currentPageIndex = last.index;
-    //   debugPrint("撤销删除的照片 id：${last.index}");
-    //   debugPrint(
-    //     "当前相册长度：${_visiblePhotos.length}, 已删除照片数量：${_deletedStack.length}",
-    //   );
-    // });
+    setState(() {
+      if (photo.state == 1) {
+        //此照片被删除
+        _visiblePhotos.insert(pageIndex ?? 0, photo);
+        photo.pageIndex = null;
+        photo.state = 0;
+        if (lastIndex != null) {
+          _photos[lastIndex].nextIndex = index;
+        }
+        if (nextIndex != null) {
+          _photos[nextIndex].lastIndex = index;
+        }
+        debugPrint(
+          "恢复删除照片。index=$index, lastIndex=$lastIndex, nextIndex=$nextIndex, pageIndex=$pageIndex.",
+        );
+        _currentPageIndex = pageIndex ?? 0;
+      } else if (photo.state == 2) {
+      } else {
+        debugPrint("照片 $index 的状态为未修改！");
+      }
+    });
 
     // // 等待一帧，确保 PageView 已更新 itemCount
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   _controller.jumpToPage(last.index);
-    // });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _controller.jumpToPage(_currentPageIndex);
+    });
   }
 
   @override
@@ -201,7 +227,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                   "当前页面索引：$index, 当前照片id: ${_visiblePhotos[_currentPageIndex].index}",
                 );
                 debugPrint(
-                  "当前相册长度：${_visiblePhotos.length}, 已删除照片数量：${_deletedStack.length}, 已移动照片数量：0",
+                  "当前相册长度：${_visiblePhotos.length}, 已处理照片数量：${_changedPhotos.length}.",
                 );
               });
             },
@@ -316,7 +342,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
             child: IconButton(
               icon: const Icon(Icons.undo),
               color: Colors.white,
-              onPressed: _deletedStack.isEmpty ? null : _undoDelete,
+              onPressed: _changedPhotos.isEmpty ? null : _undo,
               tooltip: '撤销删除',
             ),
           ),
@@ -430,7 +456,9 @@ class _Photo {
   final int index;
   int? lastIndex;
   int? nextIndex;
-  final bool handled = false;
+  int? pageIndex; //删除或移动时用，标记原来所在的页面。
+  int state = 0; //0: 未操作 1: 删除 2: 移动
+  AssetPathEntity? targetAlbum;
 
   _Photo(this.photo, this.album, this.index, this.lastIndex, this.nextIndex);
 }
