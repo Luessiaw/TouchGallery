@@ -197,6 +197,10 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     // - 返回结果
   }
 
+  void _movePhoto(AssetPathEntity album) {
+    debugPrint("点击了相册：${album.name}");
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -408,9 +412,15 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.arrow_downward,
-            color: disabled ? Colors.grey : Colors.white,
+          IconButton(
+            icon: Icon(
+              Icons.arrow_downward,
+              color: disabled ? Colors.grey : Colors.white,
+            ),
+            onPressed: () {
+              _movePhoto(album);
+            },
+            tooltip: '移动照片',
           ),
           const SizedBox(height: 6),
           SizedBox(
@@ -436,7 +446,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: GestureDetector(
         onTap: () {
-          debugPrint('新建相册（占位）');
+          debugPrint('点击了新建相册。');
         },
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
