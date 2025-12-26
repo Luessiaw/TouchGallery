@@ -53,14 +53,6 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       duration: const Duration(milliseconds: 250),
     );
 
-    // _deleteAnim =
-    //     Tween<double>(
-    //       begin: 0.0,
-    //       end: -1.0, // 向上飞出
-    //     ).animate(
-    //       CurvedAnimation(parent: _deleteAnimController, curve: Curves.easeIn),
-    //     );
-
     _deleteAnimController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         _deleteAnimController.reset();
@@ -82,6 +74,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       debugPrint(
         "当前相册长度：${_visiblePhotos.length}, 已删除照片数量：${_deletedStack.length}",
       );
+      debugPrint("_deletedStack: $_deletedStack");
 
       if (_currentIndex >= _visiblePhotos.length) {
         _currentIndex = _visiblePhotos.length - 1;
@@ -185,8 +178,10 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                 behavior: HitTestBehavior.translucent,
                 onDoubleTapDown: (details) {
                   _doubleTapDetails = details;
+                  debugPrint("点击事件：双击按下");
                 },
                 onDoubleTap: () {
+                  debugPrint("点击事件：双击");
                   final position = _doubleTapDetails!.localPosition;
 
                   final currentScale = _transformationController.value
@@ -208,6 +203,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                 onVerticalDragEnd: _isZoomed
                     ? null
                     : (details) {
+                        debugPrint("点击事件：竖直拖动松开");
                         const deleteThreshold = -150;
 
                         if (_isDeleting) return;
@@ -227,6 +223,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                 onVerticalDragUpdate: _isZoomed
                     ? null
                     : (details) {
+                        // debugPrint("点击事件：竖直拖动更新");
                         setState(() {
                           _dragOffsetY += details.delta.dy;
                           // 只允许向上拖（负值）
