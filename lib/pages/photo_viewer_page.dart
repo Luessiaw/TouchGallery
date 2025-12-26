@@ -81,9 +81,9 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     // 用 Map 快速根据 index 查找 Photo
 
     // 找到链表的头结点：lastIndex == null 或者链表中没有对应 lastIndex 的
-    _Photo? head = photos.firstWhere(
-      (p) => (p.last == null && p.state == 0),
-      orElse: () => photos.first,
+    _Photo? head = photos.cast<_Photo?>().firstWhere(
+      (p) => (p!.last == null && p.state == 0),
+      orElse: () => null,
     );
 
     List<_Photo> visible = [];
@@ -101,6 +101,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
 
   void _deletePhoto() {
     if (_pageIndex < 0 || _pageIndex >= _visiblePhotos.length) {
+      debugPrint("@@删除照片时，当前触及边界。pageIndex: $_pageIndex");
       return;
     }
 
