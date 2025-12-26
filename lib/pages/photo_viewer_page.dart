@@ -25,11 +25,12 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   late final PageController _controller;
   late final TransformationController _transformationController;
   TapDownDetails? _doubleTapDetails;
-  int _currentIndex = 0;
+  int _currentPageIndex = 0;
 
-  late List<AssetEntity> _visiblePhotos; // 当前可浏览照片
+  late List<_Photo> _visiblePhotos = []; // 当前可浏览照片
+  final List<_Photo> _photos = [];
   final List<_DeletedPhoto> _deletedStack = [];
-  final List<_MovedPhoto> _movedStack = [];
+  // final List<_MovedPhoto> _movedStack = [];
 
   double _dragOffsetY = 0.0;
 
@@ -46,7 +47,18 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     super.initState();
     _controller = PageController(initialPage: widget.initialIndex);
     _transformationController = TransformationController();
-    _visiblePhotos = List.of(widget.photos);
+    // _visiblePhotos = List.of(widget.photos);
+    for (var i = 0; i < widget.photos.length; i++) {
+      int? lastIndex = (i == 0) ? null : (i - 1);
+      int? nextIndex = (i == widget.photos.length - 1) ? null : (i + 1);
+      _photos.add(
+        _Photo(widget.photos[i], widget.currentAlbum, i, lastIndex, nextIndex),
+      );
+    }
+    _visiblePhotos = getVisiblePhotos(_photos);
+    // _photos[-1].nextIndex = -1; // lastIndex = -1 表明是
+    debugPrint("当前 visible photos 长度： ${_visiblePhotos.length}");
+    debugPrint("当前 visible 链：");
 
     _deleteAnimController = AnimationController(
       vsync: this,
@@ -62,60 +74,83 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     });
   }
 
+  List<_Photo> getVisiblePhotos(List<_Photo> photos) {
+    // 用 Map 快速根据 index 查找 Photo
+    final Map<int, _Photo> photoMap = {for (var p in photos) p.index: p};
+
+    // 找到链表的头结点：lastIndex == null 或者链表中没有对应 lastIndex 的
+    _Photo? head = photos.firstWhere(
+      (p) => p.lastIndex == null,
+      orElse: () => photos.first,
+    );
+
+    List<_Photo> visible = [];
+    _Photo? current = head;
+    while (current != null) {
+      visible.add(current);
+      if (current.nextIndex != null) {
+        current = photoMap[current.nextIndex!];
+      } else {
+        break;
+      }
+    }
+    return visible;
+  }
+
   void _deleteCurrentPhoto() {
-    if (_currentIndex < 0 || _currentIndex >= _visiblePhotos.length) return;
+    // if (_currentPageIndex < 0 || _currentPageIndex >= _visiblePhotos.length) return;
 
-    final asset = _visiblePhotos[_currentIndex];
+    // final asset = _visiblePhotos[_currentPageIndex];
 
-    setState(() {
-      _deletedStack.add(_DeletedPhoto(asset, _currentIndex));
-      _visiblePhotos.removeAt(_currentIndex);
-      debugPrint("删除的照片 id：$_currentIndex");
-      debugPrint(
-        "当前相册长度：${_visiblePhotos.length}, 已删除照片数量：${_deletedStack.length}",
-      );
-      debugPrint("_deletedStack: $_deletedStack");
+    // setState(() {
+    //   _deletedStack.add(_DeletedPhoto(asset, _currentPageIndex));
+    //   _visiblePhotos.removeAt(_currentPageIndex);
+    //   debugPrint("删除的照片 id：$_currentPageIndex");
+    //   debugPrint(
+    //     "当前相册长度：${_visiblePhotos.length}, 已删除照片数量：${_deletedStack.length}",
+    //   );
+    //   debugPrint("_deletedStack: $_deletedStack");
 
-      if (_currentIndex >= _visiblePhotos.length) {
-        _currentIndex = _visiblePhotos.length - 1;
-      }
-    });
+    //   if (_currentPageIndex >= _visiblePhotos.length) {
+    //     _currentPageIndex = _visiblePhotos.length - 1;
+    //   }
+    // });
   }
 
-  void _moveCurrentPhotoToAlbum(AssetPathEntity targetAlbum) {
-    if (_currentIndex < 0 || _currentIndex >= _visiblePhotos.length) return;
+  // void _moveCurrentPhotoToAlbum(AssetPathEntity targetAlbum) {
+  //   if (_currentPageIndex < 0 || _currentPageIndex >= _visiblePhotos.length) return;
 
-    final photo = _visiblePhotos[_currentIndex];
+  //   final photo = _visiblePhotos[_currentPageIndex];
 
-    setState(() {
-      _movedStack.add(_MovedPhoto(photo, targetAlbum, _currentIndex));
+  //   setState(() {
+  //     _movedStack.add(_MovedPhoto(photo, targetAlbum, _currentPageIndex));
 
-      _visiblePhotos.removeAt(_currentIndex);
+  //     _visiblePhotos.removeAt(_currentPageIndex);
 
-      if (_currentIndex >= _visiblePhotos.length) {
-        _currentIndex = _visiblePhotos.length - 1;
-      }
-    });
-  }
+  //     if (_currentPageIndex >= _visiblePhotos.length) {
+  //       _currentPageIndex = _visiblePhotos.length - 1;
+  //     }
+  //   });
+  // }
 
   void _undoDelete() {
-    if (_deletedStack.isEmpty) return;
+    // if (_deletedStack.isEmpty) return;
 
-    final last = _deletedStack.removeLast();
+    // final last = _deletedStack.removeLast();
 
-    setState(() {
-      _visiblePhotos.insert(last.index, last.photo);
-      _currentIndex = last.index;
-      debugPrint("撤销删除的照片 id：${last.index}");
-      debugPrint(
-        "当前相册长度：${_visiblePhotos.length}, 已删除照片数量：${_deletedStack.length}",
-      );
-    });
+    // setState(() {
+    //   _visiblePhotos.insert(last.index, last.photo);
+    //   _currentPageIndex = last.index;
+    //   debugPrint("撤销删除的照片 id：${last.index}");
+    //   debugPrint(
+    //     "当前相册长度：${_visiblePhotos.length}, 已删除照片数量：${_deletedStack.length}",
+    //   );
+    // });
 
-    // 等待一帧，确保 PageView 已更新 itemCount
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _controller.jumpToPage(last.index);
-    });
+    // // 等待一帧，确保 PageView 已更新 itemCount
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   _controller.jumpToPage(last.index);
+    // });
   }
 
   @override
@@ -160,17 +195,19 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                 : const PageScrollPhysics(),
             onPageChanged: (index) {
               setState(() {
-                _currentIndex = index;
+                _currentPageIndex = index; //页码索引，与 _photos 中 photo 的索引不同。
                 _transformationController.value = Matrix4.identity();
-                debugPrint("当前查看的照片 id：$index");
                 debugPrint(
-                  "当前相册长度：${_visiblePhotos.length}, 已删除照片数量：${_deletedStack.length}",
+                  "当前页面索引：$index, 当前照片id: ${_visiblePhotos[_currentPageIndex].index}",
+                );
+                debugPrint(
+                  "当前相册长度：${_visiblePhotos.length}, 已删除照片数量：${_deletedStack.length}, 已移动照片数量：0",
                 );
               });
             },
             itemBuilder: (context, index) {
               final asset = _visiblePhotos[index];
-              final deleteOffset = (_isDeleting && index == _currentIndex)
+              final deleteOffset = (_isDeleting && index == _currentPageIndex)
                   ? _deleteAnimController.value *
                         MediaQuery.of(context).size.height
                   : 0.0;
@@ -245,7 +282,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                       maxScale: 4.0,
                       child: Center(
                         child: AssetEntityImage(
-                          asset,
+                          asset.photo,
                           isOriginal: false,
                           fit: BoxFit.contain,
                         ),
@@ -379,10 +416,21 @@ class _DeletedPhoto {
   _DeletedPhoto(this.photo, this.index);
 }
 
-class _MovedPhoto {
-  final AssetEntity photo;
-  final AssetPathEntity targetAlbum;
-  final int originalIndex;
+// class _MovedPhoto {
+//   final AssetEntity photo;
+//   final AssetPathEntity targetAlbum;
+//   final int originalIndex;
 
-  _MovedPhoto(this.photo, this.targetAlbum, this.originalIndex);
+//   _MovedPhoto(this.photo, this.targetAlbum, this.originalIndex);
+// }
+
+class _Photo {
+  final AssetEntity photo;
+  final AssetPathEntity album;
+  final int index;
+  int? lastIndex;
+  int? nextIndex;
+  final bool handled = false;
+
+  _Photo(this.photo, this.album, this.index, this.lastIndex, this.nextIndex);
 }
