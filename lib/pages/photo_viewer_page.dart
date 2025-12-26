@@ -435,21 +435,6 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   }
 }
 
-class _DeletedPhoto {
-  final AssetEntity photo;
-  final int index;
-
-  _DeletedPhoto(this.photo, this.index);
-}
-
-// class _MovedPhoto {
-//   final AssetEntity photo;
-//   final AssetPathEntity targetAlbum;
-//   final int originalIndex;
-
-//   _MovedPhoto(this.photo, this.targetAlbum, this.originalIndex);
-// }
-
 class _Photo {
   final AssetEntity photo;
   final AssetPathEntity album;

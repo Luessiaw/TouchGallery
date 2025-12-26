@@ -22,9 +22,13 @@ class MediaService {
   //   );
   // }
   static Future<List<AssetPathEntity>> getAlbums() async {
+    final filterOption = FilterOptionGroup(
+      orders: [OrderOption(type: OrderOptionType.createDate, asc: false)],
+    );
     final albums = await PhotoManager.getAssetPathList(
       type: RequestType.image,
       hasAll: true,
+      filterOption: filterOption,
     );
 
     debugPrint("获取相册");

@@ -31,6 +31,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
     }
 
     final albums = await MediaService.getAlbums();
+
     setState(() {
       _albums = albums;
       _loading = false;
