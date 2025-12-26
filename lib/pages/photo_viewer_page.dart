@@ -206,18 +206,19 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   void _applyChanges() async {
     debugPrint('@@点击了应用按钮。');
 
-    List<String> deletedIds = await _deleteMedia(_changedPhotos);
-    if (deletedIds.length < _changedPhotos.length) {
+    List<String> deletedIds = await _deleteOrMoveMedia(_changedPhotos);
+    if (deletedIds.length != _changedPhotos.length) {
       if (deletedIds.isEmpty) {
-        debugPrint("@@未删除照片，可能是用户取消授权。");
+        debugPrint("@@未应用，可能是用户取消授权。");
       } else {
         debugPrint(
-          "@@ ${_changedPhotos.length} 张照片中的 ${_changedPhotos.length - deletedIds.length} 张未成功删除。",
+          "@@ ${_changedPhotos.length} 张照片中的 ${_changedPhotos.length - deletedIds.length} 张未成功应用。",
         );
       }
     } else {
-      debugPrint('@@成功删除 ${deletedIds.length} 张照片。');
+      debugPrint('@@成功处理 ${deletedIds.length} 张照片。');
     }
+
     _changedPhotos.removeWhere((_Photo photo) {
       if (deletedIds.contains(photo.assetEntity.id)) {
         photo.state = 3;
@@ -235,23 +236,53 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
 
   /// 删除单张或多张照片/视频
   /// assetIds: photo_manager 获取的 AssetEntity.id
-  static Future<List<String>> _deleteMedia(List<_Photo> changedPhotos) async {
+  static Future<List<String>> _deleteOrMoveMedia(
+    List<_Photo> changedPhotos,
+  ) async {
     final List<String> toDeleteIds = [];
-    final List<String> toMoveIds = [];
+    final List<_Photo> toMovePhotos = [];
+    final List<String> movedIds = [];
     for (int i = 0; i < changedPhotos.length; i++) {
       var photo = changedPhotos[i];
       if (photo.state == 1) {
         toDeleteIds.add(photo.assetEntity.id);
       } else if (photo.state == 2) {
-        toMoveIds.add(photo.assetEntity.id);
+        toMovePhotos.add(photo);
       }
     }
+    debugPrint(
+      "@@要移动的照片 id: ${[for (var p in toMovePhotos) p.assetEntity.id]}.",
+    );
+    debugPrint("@@要删除的照片 id: $toDeleteIds");
+    // 尝试移动照片
+    for (_Photo photo in toMovePhotos) {
+      try {
+        if (photo.targetAlbum != null) {
+          final AssetEntity newAst = await PhotoManager.editor.copyAssetToPath(
+            asset: photo.assetEntity,
+            pathEntity: photo.targetAlbum!,
+          );
+          movedIds.add(photo.assetEntity.id);
+          toDeleteIds.add(photo.assetEntity.id);
+          debugPrint(
+            "将照片 ${photo.index} 移动至 ${photo.targetAlbum?.name}. 旧照片 id: ${photo.assetEntity.id}, 新照片 id: ${newAst.id}",
+          );
+        }
+      } catch (e) {
+        debugPrint(
+          "@@移动照片时出错。 index=${photo.index}, id=${photo.assetEntity.id}. 错误信息：$e",
+        );
+      }
+    }
+    // 尝试删除照片。
     try {
+      debugPrint("@@要删除的照片 id: $toDeleteIds");
       var deletedIds = await PhotoManager.editor.deleteWithIds(toDeleteIds);
       return deletedIds;
     } catch (e) {
       debugPrint('@@删除失败: $e');
       return [];
+      // List<String> deletedIds = [];
     }
   }
 
