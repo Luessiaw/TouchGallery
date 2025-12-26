@@ -219,13 +219,17 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       debugPrint('@@成功处理 ${deletedIds.length} 张照片。');
     }
 
-    _changedPhotos.removeWhere((_Photo photo) {
-      if (deletedIds.contains(photo.assetEntity.id)) {
-        photo.state = 3;
-        return true;
-      }
-      return false;
+    setState(() {
+      _changedPhotos.removeWhere((_Photo photo) {
+        if (deletedIds.contains(photo.assetEntity.id)) {
+          photo.state = 3;
+          return true;
+        }
+        return false;
+      });
     });
+    // debugPrint("@@目前的页码：$_pageIndex");
+    // _controller.jumpToPage(_pageIndex);
     // _changedPhotos.clear();
   }
 
@@ -438,13 +442,13 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                   icon: const Icon(Icons.undo),
                   color: Colors.white,
                   onPressed: _changedPhotos.isEmpty ? null : _undo,
-                  tooltip: '撤销删除',
+                  tooltip: '撤销更改',
                 ),
                 IconButton(
                   icon: const Icon(Icons.check),
                   color: Colors.green,
                   onPressed: _changedPhotos.isEmpty ? null : _applyChanges,
-                  tooltip: '撤销删除',
+                  tooltip: '应用更改',
                 ),
               ],
             ),

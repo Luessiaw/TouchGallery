@@ -95,7 +95,11 @@ class _PhotoGridPageState extends State<PhotoGridPage> {
                     allAlbums: widget.allAlbums,
                   ),
                 ),
-              );
+              ).then((_) async {
+                _page = 0;
+                _photos.clear();
+                await _loadMore();
+              });
             },
             child: AssetEntityImage(
               _photos[index],
