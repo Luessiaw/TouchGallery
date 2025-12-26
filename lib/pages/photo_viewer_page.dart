@@ -217,12 +217,13 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     } else {
       debugPrint('@@成功删除 ${deletedIds.length} 张照片。');
     }
-    for (_Photo photo in _changedPhotos) {
+    _changedPhotos.removeWhere((_Photo photo) {
       if (deletedIds.contains(photo.assetEntity.id)) {
         photo.state = 3;
-        _changedPhotos.remove(photo); // 从这个列表中删除后不会再被索引
+        return true;
       }
-    }
+      return false;
+    });
     // _changedPhotos.clear();
   }
 
