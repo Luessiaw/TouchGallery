@@ -211,139 +211,164 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
         ],
       ),
       backgroundColor: Colors.black,
-      body: Stack(
+      body: Column(
         children: [
-          PageView.builder(
-            controller: _controller,
-            itemCount: _visiblePhotos.length,
-            physics: _isZoomed
-                ? const NeverScrollableScrollPhysics()
-                : const PageScrollPhysics(),
-            onPageChanged: (index) {
-              setState(() {
-                _currentPageIndex = index; //页码索引，与 _photos 中 photo 的索引不同。
-                _transformationController.value = Matrix4.identity();
-                debugPrint(
-                  "当前页面索引：$index, 当前照片id: ${_visiblePhotos[_currentPageIndex].index}",
-                );
-                debugPrint(
-                  "当前相册长度：${_visiblePhotos.length}, 已处理照片数量：${_changedPhotos.length}.",
-                );
-              });
-            },
-            itemBuilder: (context, index) {
-              final asset = _visiblePhotos[index];
-              final deleteOffset = (_isDeleting && index == _currentPageIndex)
-                  ? _deleteAnimController.value *
-                        MediaQuery.of(context).size.height
-                  : 0.0;
-              return GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onDoubleTapDown: (details) {
-                  _doubleTapDetails = details;
-                  debugPrint("点击事件：双击按下");
-                },
-                onDoubleTap: () {
-                  debugPrint("点击事件：双击");
-                  final position = _doubleTapDetails!.localPosition;
+          Expanded(
+            child: Stack(
+              children: [
+                PageView.builder(
+                  controller: _controller,
+                  itemCount: _visiblePhotos.length,
+                  physics: _isZoomed
+                      ? const NeverScrollableScrollPhysics()
+                      : const PageScrollPhysics(),
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentPageIndex = index; //页码索引，与 _photos 中 photo 的索引不同。
+                      _transformationController.value = Matrix4.identity();
+                      debugPrint(
+                        "当前页面索引：$index, 当前照片id: ${_visiblePhotos[_currentPageIndex].index}",
+                      );
+                      debugPrint(
+                        "当前相册长度：${_visiblePhotos.length}, 已处理照片数量：${_changedPhotos.length}.",
+                      );
+                    });
+                  },
+                  itemBuilder: (context, index) {
+                    final asset = _visiblePhotos[index];
+                    final deleteOffset =
+                        (_isDeleting && index == _currentPageIndex)
+                        ? _deleteAnimController.value *
+                              MediaQuery.of(context).size.height
+                        : 0.0;
+                    return GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onDoubleTapDown: (details) {
+                        _doubleTapDetails = details;
+                        debugPrint("点击事件：双击按下");
+                      },
+                      onDoubleTap: () {
+                        debugPrint("点击事件：双击");
+                        final position = _doubleTapDetails!.localPosition;
 
-                  final currentScale = _transformationController.value
-                      .getMaxScaleOnAxis();
+                        final currentScale = _transformationController.value
+                            .getMaxScaleOnAxis();
 
-                  if (currentScale > 1.0) {
-                    _transformationController.value = Matrix4.identity();
-                  } else {
-                    _transformationController.value = Matrix4.identity()
-                      ..translateByDouble(
-                        -position.dx * 1.5,
-                        -position.dy * 1.5,
-                        0.0,
-                        1.0,
-                      )
-                      ..scaleByDouble(3.0, 3.0, 1.0, 1.0);
-                  }
-                },
-                onVerticalDragEnd: _isZoomed
-                    ? null
-                    : (details) {
-                        debugPrint("点击事件：竖直拖动松开");
-                        const deleteThreshold = -150;
-
-                        if (_isDeleting) return;
-
-                        if (_dragOffsetY < deleteThreshold) {
-                          _dragOffsetY = 0;
-                          setState(() {
-                            _isDeleting = true;
-                          });
-                          _deleteAnimController.forward();
+                        if (currentScale > 1.0) {
+                          _transformationController.value = Matrix4.identity();
                         } else {
-                          setState(() {
-                            _dragOffsetY = 0;
-                          });
+                          _transformationController.value = Matrix4.identity()
+                            ..translateByDouble(
+                              -position.dx * 1.5,
+                              -position.dy * 1.5,
+                              0.0,
+                              1.0,
+                            )
+                            ..scaleByDouble(3.0, 3.0, 1.0, 1.0);
                         }
                       },
-                onVerticalDragUpdate: _isZoomed
-                    ? null
-                    : (details) {
-                        // debugPrint("点击事件：竖直拖动更新");
-                        setState(() {
-                          _dragOffsetY += details.delta.dy;
-                          // 只允许向上拖（负值）
-                          if (_dragOffsetY > 0) {
-                            _dragOffsetY = 0;
-                          }
-                        });
-                      },
-                child: Transform.translate(
-                  offset: Offset(0, _dragOffsetY + deleteOffset),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    // transform: Matrix4.translationValues(0, 0, 0),
-                    child: InteractiveViewer(
-                      transformationController: _transformationController,
-                      panEnabled: true,
-                      scaleEnabled: true,
-                      minScale: 1.0,
-                      maxScale: 4.0,
-                      child: Center(
-                        child: AssetEntityImage(
-                          asset.photo,
-                          isOriginal: false,
-                          fit: BoxFit.contain,
+                      onVerticalDragEnd: _isZoomed
+                          ? null
+                          : (details) {
+                              debugPrint("点击事件：竖直拖动松开");
+                              const deleteThreshold = -150;
+
+                              if (_isDeleting) return;
+
+                              if (_dragOffsetY < deleteThreshold) {
+                                _dragOffsetY = 0;
+                                setState(() {
+                                  _isDeleting = true;
+                                });
+                                _deleteAnimController.forward();
+                              } else {
+                                setState(() {
+                                  _dragOffsetY = 0;
+                                });
+                              }
+                            },
+                      onVerticalDragUpdate: _isZoomed
+                          ? null
+                          : (details) {
+                              // debugPrint("点击事件：竖直拖动更新");
+                              setState(() {
+                                _dragOffsetY += details.delta.dy;
+                                // 只允许向上拖（负值）
+                                if (_dragOffsetY > 0) {
+                                  _dragOffsetY = 0;
+                                }
+                              });
+                            },
+                      child: Transform.translate(
+                        offset: Offset(0, _dragOffsetY + deleteOffset),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          // transform: Matrix4.translationValues(0, 0, 0),
+                          child: InteractiveViewer(
+                            transformationController: _transformationController,
+                            panEnabled: true,
+                            scaleEnabled: true,
+                            minScale: 1.0,
+                            maxScale: 4.0,
+                            child: Center(
+                              child: AssetEntityImage(
+                                asset.photo,
+                                isOriginal: false,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 120,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 150),
+                    opacity: _dragOffsetY < -50 ? 0.8 : 0.0,
+                    child: Container(
+                      color: const Color.fromARGB(
+                        255,
+                        132,
+                        31,
+                        23,
+                      ).withValues(),
+                      child: const Center(
+                        child: Icon(
+                          Icons.delete,
+                          color: Colors.white,
+                          size: 36,
                         ),
                       ),
                     ),
                   ),
                 ),
-              );
-            },
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 120,
-            child: AnimatedOpacity(
-              duration: const Duration(milliseconds: 150),
-              opacity: _dragOffsetY < -50 ? 0.8 : 0.0,
-              child: Container(
-                color: const Color.fromARGB(255, 132, 31, 23).withValues(),
-                child: const Center(
-                  child: Icon(Icons.delete, color: Colors.white, size: 36),
-                ),
-              ),
+              ],
             ),
           ),
-          // ===== 撤销删除按钮 =====
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
-            right: 16,
-            child: IconButton(
-              icon: const Icon(Icons.undo),
-              color: Colors.white,
-              onPressed: _changedPhotos.isEmpty ? null : _undo,
-              tooltip: '撤销删除',
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.undo),
+                  color: Colors.white,
+                  onPressed: _changedPhotos.isEmpty ? null : _undo,
+                  tooltip: '撤销删除',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.check),
+                  color: Colors.green,
+                  onPressed: _changedPhotos.isEmpty ? null : _applyChanges,
+                  tooltip: '撤销删除',
+                ),
+              ],
             ),
           ),
         ],
