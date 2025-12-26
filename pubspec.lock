@@ -70,6 +70,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "6.0.0"
+  flutter_media_delete:
+    dependency: "direct main"
+    description:
+      name: flutter_media_delete
+      sha256: f00a7da4978ad99365cd50532cd0627026081c1c9c5702fdf8478fa94aa9e926
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.0.1"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -155,6 +163,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.2.0"
+  plugin_platform_interface:
+    dependency: transitive
+    description:
+      name: plugin_platform_interface
+      sha256: "4820fbfdb9478b1ebae27888254d445073732dae3d6ea81f0b7e06d5dedc3f02"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.1.8"
   sky_engine:
     dependency: transitive
     description: flutter

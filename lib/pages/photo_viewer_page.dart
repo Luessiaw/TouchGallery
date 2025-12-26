@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
+// import 'package:flutter_media_delete/flutter_media_delete.dart';
+// import 'dart:io';
 
 class PhotoViewerPage extends StatefulWidget {
   final List<AssetEntity> photos;
@@ -215,10 +217,31 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     // Step 1：仅占位
     debugPrint('点击了应用按钮。');
 
-    // 后续 Step 中会在这里：
-    // - 提交删除列表
-    // - pop 回 PhotoGridPage
-    // - 返回结果
+    _deleteMedia(_changedPhotos);
+    _changedPhotos.clear();
+  }
+
+  static Future<bool> _requestPermission() async {
+    final result = await PhotoManager.requestPermissionExtend();
+    return result.isAuth || result.hasAccess;
+  }
+
+  /// 删除单张或多张照片/视频
+  /// assetIds: photo_manager 获取的 AssetEntity.id
+  static Future<void> _deleteMedia(List<_Photo> changedPhotos) async {
+    final List<String> toDeleteIds = [];
+    for (int i = 0; i < changedPhotos.length; i++) {
+      var photo = changedPhotos[i];
+      if (photo.state == 1) {
+        toDeleteIds.add(photo.assetEntity.id);
+      }
+    }
+    try {
+      var deletedIds = await PhotoManager.editor.deleteWithIds(toDeleteIds);
+      debugPrint('删除了 ${deletedIds.length} 张照片。');
+    } catch (e) {
+      debugPrint('删除失败: $e');
+    }
   }
 
   @override
@@ -327,7 +350,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                             maxScale: 4.0,
                             child: Center(
                               child: AssetEntityImage(
-                                asset.photo,
+                                asset.assetEntity,
                                 isOriginal: false,
                                 fit: BoxFit.contain,
                               ),
@@ -482,7 +505,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
 }
 
 class _Photo {
-  final AssetEntity photo;
+  final AssetEntity assetEntity;
   final AssetPathEntity album;
   final int index;
   int? lastIndex;
@@ -491,5 +514,46 @@ class _Photo {
   int state = 0; //0: 未操作 1: 删除 2: 移动
   AssetPathEntity? targetAlbum;
 
-  _Photo(this.photo, this.album, this.index, this.lastIndex, this.nextIndex);
+  _Photo(
+    this.assetEntity,
+    this.album,
+    this.index,
+    this.lastIndex,
+    this.nextIndex,
+  );
 }
+
+// class _MediaUtils {
+//   /// 请求相册权限
+
+//   /// 移动单张或多张资源到指定相册
+//   /// targetAlbumName: 目标相册名称
+//   static Future<void> moveToAlbum(
+//     List<AssetEntity> assets,
+//     String targetAlbumName,
+//   ) async {
+//     // 获取所有相册
+//     final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
+//       type: RequestType.image,
+//       hasAll: true,
+//     );
+
+//     // 查找目标相册
+//     AssetPathEntity? targetAlbum = albums.firstWhere(
+//       (album) => album.name == targetAlbumName,
+//       orElse: () => null,
+//     );
+
+//     // 移动资源
+//     for (var asset in assets) {
+//       try {
+//         await PhotoManager.editor.copyAssetToPath(
+//           asset: asset,
+//           pathEntity: targetAlbum,
+//         );
+//       } catch (e) {
+//         print('移动 ${asset.id} 异常: $e');
+//       }
+//     }
+//   }
+// }

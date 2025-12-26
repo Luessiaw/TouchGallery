@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'pages/albums_page.dart';
 import 'pages/timeline_page.dart';
+import 'package:flutter/foundation.dart';
 
 void main() {
+  // 重写 debugPrint，只打印前缀带 @ 的消息
+  debugPrint = (String? message, {int? wrapWidth}) {
+    if (message != null && message.startsWith('@')) {
+      debugPrintSynchronously(message, wrapWidth: wrapWidth);
+    }
+  };
   runApp(const PhotoManagerApp());
 }
 
