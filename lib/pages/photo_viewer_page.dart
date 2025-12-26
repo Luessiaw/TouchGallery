@@ -133,9 +133,29 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     super.dispose();
   }
 
+  void _applyChanges() {
+    // Step 1：仅占位
+    debugPrint('点击了应用按钮。');
+
+    // 后续 Step 中会在这里：
+    // - 提交删除列表
+    // - pop 回 PhotoGridPage
+    // - 返回结果
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('照片查看'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.check),
+            tooltip: '应用更改',
+            onPressed: _applyChanges,
+          ),
+        ],
+      ),
       backgroundColor: Colors.black,
       body: Stack(
         children: [
