@@ -144,7 +144,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     }
 
     debugPrint(
-      "@@照片信息：index=${photo.index}, lastIndex=${last?.index}, nextIdex=${next?.index}, pageIndex=$_pageIndex",
+      "@@取出照片：index=${photo.index}, lastIndex=${last?.index}, nextIdex=${next?.index}, pageIndex=$_pageIndex",
     );
     return photo;
   }
@@ -205,11 +205,25 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   void _applyChanges() async {
     debugPrint('@@点击了应用按钮。');
 
-    List<_Photo> undeletedPhotos = await _deleteMedia(_changedPhotos);
-    for (_Photo photo in _changedPhotos) {
-      if (undeletedPhotos.contains(photo)) {}
+    List<String> deletedIds = await _deleteMedia(_changedPhotos);
+    if (deletedIds.length < _changedPhotos.length) {
+      if (deletedIds.isEmpty) {
+        debugPrint("@@未删除照片，可能是用户取消授权。");
+      } else {
+        debugPrint(
+          "@@ ${_changedPhotos.length} 张照片中的 ${_changedPhotos.length - deletedIds.length} 张未成功删除。",
+        );
+      }
+    } else {
+      debugPrint('@@成功删除 ${deletedIds.length} 张照片。');
     }
-    _changedPhotos.clear();
+    for (_Photo photo in _changedPhotos) {
+      if (deletedIds.contains(photo.assetEntity.id)) {
+        photo.state = 3;
+        _changedPhotos.remove(photo); // 从这个列表中删除后不会再被索引
+      }
+    }
+    // _changedPhotos.clear();
   }
 
   // static Future<bool> _requestPermission() async {
@@ -219,32 +233,23 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
 
   /// 删除单张或多张照片/视频
   /// assetIds: photo_manager 获取的 AssetEntity.id
-  static Future<List<_Photo>> _deleteMedia(List<_Photo> changedPhotos) async {
+  static Future<List<String>> _deleteMedia(List<_Photo> changedPhotos) async {
     final List<String> toDeleteIds = [];
-    final Map<String, _Photo> mapIdPhoto = {
-      for (var photo in changedPhotos) photo.assetEntity.id: photo,
-    };
+    final List<String> toMoveIds = [];
     for (int i = 0; i < changedPhotos.length; i++) {
       var photo = changedPhotos[i];
       if (photo.state == 1) {
         toDeleteIds.add(photo.assetEntity.id);
+      } else if (photo.state == 2) {
+        toMoveIds.add(photo.assetEntity.id);
       }
     }
     try {
       var deletedIds = await PhotoManager.editor.deleteWithIds(toDeleteIds);
-      debugPrint('@@删除了 ${deletedIds.length} 张照片。');
-      List<String> undeletedIds = toDeleteIds
-          .toSet()
-          .difference(deletedIds.toSet())
-          .toList();
-      List<_Photo> undeletedPhotos = [
-        for (var id in undeletedIds) mapIdPhoto[id]!,
-      ];
-      return undeletedPhotos;
+      return deletedIds;
     } catch (e) {
       debugPrint('@@删除失败: $e');
-      List<_Photo> undeletedPhotos = changedPhotos;
-      return undeletedPhotos;
+      return [];
     }
   }
 
@@ -269,11 +274,11 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                       _pageIndex = index; //页码索引，与 _photos 中 photo 的索引不同。
                       _transformationController.value = Matrix4.identity();
                       debugPrint(
-                        "@@当前页面索引：$index, 当前照片id: ${_visiblePhotos[_pageIndex].index}",
+                        "@@当前页面索引：$_pageIndex, 照片 index: ${_visiblePhotos[_pageIndex].index}, id: ${_visiblePhotos[_pageIndex].assetEntity.id}",
                       );
-                      debugPrint(
-                        "@@当前相册长度：${_visiblePhotos.length}, 已标记照片数量：${_changedPhotos.length}.",
-                      );
+                      // debugPrint(
+                      //   "@@当前相册长度：${_visiblePhotos.length}, 已标记照片数量：${_changedPhotos.length}.",
+                      // );
                     });
                   },
                   itemBuilder: (context, index) {
