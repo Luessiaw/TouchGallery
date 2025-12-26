@@ -68,7 +68,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       if (status == AnimationStatus.completed) {
         _deleteAnimController.reset();
         _isDeleting = false;
-        _deleteCurrentPhoto();
+        _deletePhoto();
       }
     });
   }
@@ -96,34 +96,53 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     return visible;
   }
 
-  void _deleteCurrentPhoto() {
+  void _deletePhoto() {
     if (_currentPageIndex < 0 || _currentPageIndex >= _visiblePhotos.length) {
       return;
     }
 
+    setState(() {
+      _Photo photo = _changePhoto();
+      photo.state = 1;
+      debugPrint("照片已标记为：删除。");
+    });
+  }
+
+  void _movePhoto(AssetPathEntity album) {
+    if (_currentPageIndex < 0 || _currentPageIndex >= _visiblePhotos.length) {
+      return;
+    }
+
+    setState(() {
+      _Photo photo = _changePhoto();
+      photo.state = 2;
+      photo.targetAlbum = album;
+      debugPrint("照片已标记为：移动至 ${album.name}");
+    });
+  }
+
+  _Photo _changePhoto() {
     final photo = _visiblePhotos[_currentPageIndex];
     final lastIndex = photo.lastIndex;
     final nextIndex = photo.nextIndex;
+    _changedPhotos.add(photo);
+    if (lastIndex != null) {
+      _photos[lastIndex].nextIndex = nextIndex;
+    }
+    if (nextIndex != null) {
+      _photos[nextIndex].lastIndex = lastIndex;
+    }
+    photo.pageIndex = _currentPageIndex;
+    _visiblePhotos.removeAt(_currentPageIndex);
+
+    if (_currentPageIndex >= _visiblePhotos.length) {
+      _currentPageIndex = _visiblePhotos.length - 1;
+    }
+
     debugPrint(
-      "删除照片。 index=${photo.index}, lastIndex=$lastIndex, nextIdex=$nextIndex, pageIndex=$_currentPageIndex.",
+      "照片信息：index=${photo.index}, lastIndex=$lastIndex, nextIdex=$nextIndex, pageIndex=$_currentPageIndex",
     );
-
-    setState(() {
-      photo.pageIndex = _currentPageIndex;
-      photo.state = 1;
-      _changedPhotos.add(photo);
-      if (lastIndex != null) {
-        _photos[lastIndex].nextIndex = nextIndex;
-      }
-      if (nextIndex != null) {
-        _photos[nextIndex].lastIndex = lastIndex;
-      }
-      _visiblePhotos.removeAt(_currentPageIndex);
-
-      if (_currentPageIndex >= _visiblePhotos.length) {
-        _currentPageIndex = _visiblePhotos.length - 1;
-      }
-    });
+    return photo;
   }
 
   // void _moveCurrentPhotoToAlbum(AssetPathEntity targetAlbum) {
@@ -152,25 +171,30 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     final index = photo.index;
 
     setState(() {
-      if (photo.state == 1) {
-        //此照片被删除
-        _visiblePhotos.insert(pageIndex ?? 0, photo);
-        photo.pageIndex = null;
-        photo.state = 0;
-        if (lastIndex != null) {
-          _photos[lastIndex].nextIndex = index;
-        }
-        if (nextIndex != null) {
-          _photos[nextIndex].lastIndex = index;
-        }
-        debugPrint(
-          "恢复删除照片。index=$index, lastIndex=$lastIndex, nextIndex=$nextIndex, pageIndex=$pageIndex.",
-        );
-        _currentPageIndex = pageIndex ?? 0;
-      } else if (photo.state == 2) {
-      } else {
-        debugPrint("照片 $index 的状态为未修改！");
+      _visiblePhotos.insert(pageIndex ?? 0, photo);
+
+      if (lastIndex != null) {
+        _photos[lastIndex].nextIndex = index;
       }
+      if (nextIndex != null) {
+        _photos[nextIndex].lastIndex = index;
+      }
+      _currentPageIndex = pageIndex ?? 0;
+      photo.state = 0;
+      photo.pageIndex = null;
+
+      if (photo.state == 1) {
+        debugPrint("恢复删除照片。");
+      } else if (photo.state == 2) {
+        debugPrint("恢复移动的照片。target album: ${photo.targetAlbum?.name}.");
+        photo.targetAlbum = null;
+      } else {
+        debugPrint("照片 ${photo.index} 的状态为未修改！");
+        return;
+      }
+      debugPrint(
+        "恢复照片。index=$index, lastIndex=$lastIndex, nextIndex=$nextIndex, pageIndex=$pageIndex.",
+      );
     });
 
     // // 等待一帧，确保 PageView 已更新 itemCount
@@ -197,23 +221,10 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     // - 返回结果
   }
 
-  void _movePhoto(AssetPathEntity album) {
-    debugPrint("点击了相册：${album.name}");
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('照片查看'),
-        // actions: [
-        //   IconButton(
-        //     icon: const Icon(Icons.check),
-        //     tooltip: '应用更改',
-        //     onPressed: _applyChanges,
-        //   ),
-        // ],
-      ),
+      appBar: AppBar(title: const Text('照片查看')),
       backgroundColor: Colors.black,
       body: Column(
         children: [
