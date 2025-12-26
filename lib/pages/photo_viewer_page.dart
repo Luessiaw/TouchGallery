@@ -51,12 +51,15 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     _currentPageIndex = widget.initialIndex;
     _transformationController = TransformationController();
     // _visiblePhotos = List.of(widget.photos);
+    _Photo? lastPhoto;
     for (var i = 0; i < widget.photos.length; i++) {
-      int? lastIndex = (i == 0) ? null : (i - 1);
-      int? nextIndex = (i == widget.photos.length - 1) ? null : (i + 1);
-      _photos.add(
-        _Photo(widget.photos[i], widget.currentAlbum, i, lastIndex, nextIndex),
-      );
+      _Photo photo = _Photo(widget.photos[i], widget.currentAlbum, i);
+      photo.last = lastPhoto;
+      if (lastPhoto != null) {
+        lastPhoto.next = photo;
+      }
+      lastPhoto = photo;
+      _photos.add(photo);
     }
     _visiblePhotos = getVisiblePhotos(_photos);
 
@@ -80,7 +83,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
 
     // 找到链表的头结点：lastIndex == null 或者链表中没有对应 lastIndex 的
     _Photo? head = photos.firstWhere(
-      (p) => p.lastIndex == null,
+      (p) => p.last == null,
       orElse: () => photos.first,
     );
 
@@ -88,8 +91,8 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     _Photo? current = head;
     while (current != null) {
       visible.add(current);
-      if (current.nextIndex != null) {
-        current = photoMap[current.nextIndex!];
+      if (current.next != null) {
+        current = current._getNext();
       } else {
         break;
       }
@@ -124,22 +127,15 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
 
   _Photo _popPhoto() {
     final photo = _visiblePhotos[_currentPageIndex];
-    int? lastIndex = photo.lastIndex;
-    int? nextIndex = photo.nextIndex;
+    _Photo? last = photo._getLast();
+    _Photo? next = photo._getNext();
     _changedPhotos.add(photo);
 
-    while ((lastIndex != null) && (_photos[lastIndex].state == 3)) {
-      lastIndex = _photos[lastIndex].lastIndex;
+    if (last != null) {
+      last.next = next;
     }
-    while ((nextIndex != null) && (_photos[nextIndex].state == 3)) {
-      nextIndex = _photos[nextIndex].nextIndex;
-    }
-
-    if (lastIndex != null) {
-      _photos[lastIndex].nextIndex = nextIndex;
-    }
-    if (nextIndex != null) {
-      _photos[nextIndex].lastIndex = lastIndex;
+    if (next != null) {
+      next.last = last;
     }
     photo.pageIndex = _currentPageIndex;
     _visiblePhotos.removeAt(_currentPageIndex);
@@ -149,41 +145,41 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     }
 
     debugPrint(
-      "@@照片信息：index=${photo.index}, lastIndex=$lastIndex, nextIdex=$nextIndex, pageIndex=$_currentPageIndex",
+      "@@照片信息：index=${photo.index}, lastIndex=${last?.index}, nextIdex=${next?.index}, pageIndex=$_currentPageIndex",
     );
     return photo;
   }
 
-  void _recoverPhoto(_Photo photo) {
-    final lastIndex = photo.lastIndex;
-    final nextIndex = photo.nextIndex;
-    final pageIndex = photo.pageIndex;
-    final index = photo.index;
-    _visiblePhotos.insert(pageIndex ?? 0, photo);
+  // void _recoverPhoto(_Photo photo) {
+  //   final lastIndex = photo.lastIndex;
+  //   final nextIndex = photo.nextIndex;
+  //   final pageIndex = photo.pageIndex;
+  //   final index = photo.index;
+  //   _visiblePhotos.insert(pageIndex ?? 0, photo);
 
-    if (lastIndex != null) {
-      _photos[lastIndex].nextIndex = index;
-    }
-    if (nextIndex != null) {
-      _photos[nextIndex].lastIndex = index;
-    }
-    _currentPageIndex = pageIndex ?? 0;
-    photo.state = 0;
-    photo.pageIndex = null;
+  //   if (lastIndex != null) {
+  //     _photos[lastIndex].nextIndex = index;
+  //   }
+  //   if (nextIndex != null) {
+  //     _photos[nextIndex].lastIndex = index;
+  //   }
+  //   _currentPageIndex = pageIndex ?? 0;
+  //   photo.state = 0;
+  //   photo.pageIndex = null;
 
-    if (photo.state == 1) {
-      debugPrint("@@恢复标记为删除的照片。");
-    } else if (photo.state == 2) {
-      debugPrint("@@恢复标记为移动的照片。target album: ${photo.targetAlbum?.name}.");
-      photo.targetAlbum = null;
-    } else {
-      debugPrint("@@照片 ${photo.index} 的状态为未修改！");
-      return;
-    }
-    debugPrint(
-      "@@恢复照片。index=$index, lastIndex=$lastIndex, nextIndex=$nextIndex, pageIndex=$pageIndex.",
-    );
-  }
+  //   if (photo.state == 1) {
+  //     debugPrint("@@恢复标记为删除的照片。");
+  //   } else if (photo.state == 2) {
+  //     debugPrint("@@恢复标记为移动的照片。target album: ${photo.targetAlbum?.name}.");
+  //     photo.targetAlbum = null;
+  //   } else {
+  //     debugPrint("@@照片 ${photo.index} 的状态为未修改！");
+  //     return;
+  //   }
+  //   debugPrint(
+  //     "@@恢复照片。index=$index, lastIndex=$lastIndex, nextIndex=$nextIndex, pageIndex=$pageIndex.",
+  //   );
+  // }
 
   void _undo() {
     if (_changedPhotos.isEmpty) return;
@@ -514,24 +510,38 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
 class _Photo {
   final AssetEntity assetEntity;
   final AssetPathEntity album;
-  final int index;
-  int? lastIndex;
-  int? nextIndex;
+  int index;
+  _Photo? last;
+  _Photo? next;
+
   int? pageIndex; //删除或移动时用，标记原来所在的页面。
   int state = 0; //0: 未操作 1: 标记为删除 2: 标记为移动 3: 已应用删除或移动
   AssetPathEntity? targetAlbum;
 
-  _Photo(
-    this.assetEntity,
-    this.album,
-    this.index,
-    this.lastIndex,
-    this.nextIndex,
-  );
+  _Photo(this.assetEntity, this.album, this.index);
 
-  int? getLastIndex(List<_Photo> photos) {
+  _Photo? _getLast() {
     // 从链表中
-    return 0;
+    if (last == null) {
+      return null;
+    }
+    if (last!.state < 3) {
+      return last;
+    } else {
+      return last!._getLast();
+    }
+  }
+
+  _Photo? _getNext() {
+    // 从链表中
+    if (next == null) {
+      return null;
+    }
+    if (next!.state < 3) {
+      return next;
+    } else {
+      return next!._getNext();
+    }
   }
 }
 
