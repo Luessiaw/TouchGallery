@@ -31,6 +31,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   TapDownDetails? _doubleTapDetails;
   int _pageIndex = 0;
   int _albumCount = 0;
+  static const int preloadRange = 1;
 
   final List<_Photo> _photos = [];
   late List<_Photo> _visiblePhotos = []; // 当前可浏览照片
@@ -45,6 +46,13 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
 
   bool get _isZoomed =>
       _transformationController.value.getMaxScaleOnAxis() > 1.01;
+
+  bool _shouldLoadOriginal(int index) {
+    debugPrint(
+      "@@判断是否加载高清图：index=$index, pageIndex=$_pageIndex, result=${(index - _pageIndex).abs() <= preloadRange}",
+    );
+    return (index - _pageIndex).abs() <= preloadRange;
+  }
 
   @override
   void initState() {
@@ -309,7 +317,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                   top: 10,
                   left: 10,
                   child: Text(
-                    "$_pageIndex/$_albumCount",
+                    "${_pageIndex + 1}/$_albumCount",
                     style: const TextStyle(color: Colors.white, fontSize: 20),
                   ),
                 ),
@@ -405,12 +413,10 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                             scaleEnabled: true,
                             minScale: 1.0,
                             maxScale: 4.0,
-                            child: Center(
-                              child: AssetEntityImage(
-                                asset.assetEntity,
-                                isOriginal: false,
-                                fit: BoxFit.contain,
-                              ),
+                            child: _PhotoPage(
+                              asset: asset.assetEntity,
+                              loadOriginal: _shouldLoadOriginal(index),
+                              index: _visiblePhotos[index].index,
                             ),
                           ),
                         ),
@@ -632,3 +638,88 @@ class _Photo {
 //     }
 //   }
 // }
+
+class _PhotoPage extends StatefulWidget {
+  final AssetEntity asset;
+  final bool loadOriginal; // 是否是当前页
+  final int index;
+
+  const _PhotoPage({
+    required this.asset,
+    required this.loadOriginal,
+    required this.index,
+  });
+
+  @override
+  State<_PhotoPage> createState() => _PhotoPageState();
+}
+
+class _PhotoPageState extends State<_PhotoPage>
+    with AutomaticKeepAliveClientMixin {
+  late AssetEntityImageProvider _thumb;
+  AssetEntityImageProvider? _origin;
+
+  @override
+  void initState() {
+    super.initState();
+    _thumb = AssetEntityImageProvider(widget.asset, isOriginal: false);
+  }
+
+  @override
+  bool get wantKeepAlive => widget.loadOriginal;
+
+  @override
+  void didUpdateWidget(covariant _PhotoPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.loadOriginal != widget.loadOriginal) {
+      updateKeepAlive(); // ⭐ 关键
+    }
+
+    if (widget.loadOriginal && _origin == null) {
+      _loadOriginalDelayed();
+    }
+
+    if (!widget.loadOriginal && _origin != null) {
+      _releaseOriginal();
+    }
+  }
+
+  void _loadOriginalDelayed() {
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (!mounted || !widget.loadOriginal) return;
+
+      setState(() {
+        _origin = AssetEntityImageProvider(widget.asset, isOriginal: true);
+      });
+    });
+  }
+
+  void _releaseOriginal() {
+    final cache = PaintingBinding.instance.imageCache;
+    cache.evict(_origin!);
+    _origin = null;
+  }
+
+  @override
+  void dispose() {
+    final cache = PaintingBinding.instance.imageCache;
+    cache.evict(_thumb);
+    if (_origin != null) {
+      cache.evict(_origin!);
+    }
+    super.dispose();
+    debugPrint("@@照片销毁, index=${widget.index}");
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    debugPrint(
+      "@@Build PhotoPage, index=${widget.index}, loadOriginal=${widget.loadOriginal}",
+    );
+    super.build(context);
+    return Center(
+      child: Image(image: _origin ?? _thumb, fit: BoxFit.contain),
+    );
+  }
+}
