@@ -313,14 +313,6 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
           Expanded(
             child: Stack(
               children: [
-                Positioned(
-                  top: 10,
-                  left: 10,
-                  child: Text(
-                    "${_pageIndex + 1}/$_albumCount",
-                    style: const TextStyle(color: Colors.white, fontSize: 20),
-                  ),
-                ),
                 PageView.builder(
                   controller: _controller,
                   itemCount: _visiblePhotos.length,
@@ -423,6 +415,14 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                       ),
                     );
                   },
+                ),
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Text(
+                    "${_pageIndex + 1}/$_albumCount",
+                    style: const TextStyle(color: Colors.white, fontSize: 20),
+                  ),
                 ),
                 Positioned(
                   top: 0,
