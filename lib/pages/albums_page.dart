@@ -13,6 +13,7 @@ class AlbumsPage extends StatefulWidget {
 
 class _AlbumsPageState extends State<AlbumsPage> {
   List<AssetPathEntity> _albums = [];
+  List<int> _albumCounts = [];
   bool _loading = true;
 
   @override
@@ -32,8 +33,13 @@ class _AlbumsPageState extends State<AlbumsPage> {
 
     final albums = await MediaService.getAlbums();
 
+    final counts = await Future.wait(albums.map((a) => a.assetCountAsync));
+
+    if (!mounted) return;
+
     setState(() {
       _albums = albums;
+      _albumCounts = counts;
       _loading = false;
     });
   }
@@ -60,6 +66,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
         itemCount: _albums.length,
         itemBuilder: (context, index) {
           final album = _albums[index];
+          final albumCount = _albumCounts[index];
 
           return GestureDetector(
             onTap: () {
@@ -69,6 +76,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
                   builder: (_) => PhotoGridPage(
                     title: album.name,
                     album: album,
+                    albumCount: albumCount,
                     allAlbums: _albums,
                   ),
                 ),
@@ -86,11 +94,28 @@ class _AlbumsPageState extends State<AlbumsPage> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     color: Colors.black54,
-                    child: Text(
-                      album.name,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            album.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          "$albumCount",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

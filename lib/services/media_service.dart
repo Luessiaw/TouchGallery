@@ -27,7 +27,7 @@ class MediaService {
     );
     final albums = await PhotoManager.getAssetPathList(
       type: RequestType.image,
-      hasAll: true,
+      hasAll: false, // 不显示“全部相册”或“Recent”
       filterOption: filterOption,
     );
 

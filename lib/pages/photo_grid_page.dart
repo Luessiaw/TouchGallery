@@ -7,12 +7,14 @@ import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 class PhotoGridPage extends StatefulWidget {
   final String title;
   final AssetPathEntity album;
+  final int albumCount;
   final List<AssetPathEntity> allAlbums;
 
   const PhotoGridPage({
     super.key,
     required this.title,
     required this.album,
+    required this.albumCount,
     required this.allAlbums,
   });
 
@@ -92,6 +94,7 @@ class _PhotoGridPageState extends State<PhotoGridPage> {
                     photos: _photos,
                     initialIndex: index,
                     currentAlbum: widget.album,
+                    currentAlbumCount: widget.albumCount,
                     allAlbums: widget.allAlbums,
                   ),
                 ),

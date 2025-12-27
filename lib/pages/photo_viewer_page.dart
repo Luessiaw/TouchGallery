@@ -8,6 +8,7 @@ class PhotoViewerPage extends StatefulWidget {
   final List<AssetEntity> photos;
   final int initialIndex;
   final AssetPathEntity currentAlbum;
+  final int currentAlbumCount;
   final List<AssetPathEntity> allAlbums;
 
   const PhotoViewerPage({
@@ -15,6 +16,7 @@ class PhotoViewerPage extends StatefulWidget {
     required this.photos,
     required this.initialIndex,
     required this.currentAlbum,
+    required this.currentAlbumCount,
     required this.allAlbums,
   });
 
@@ -28,6 +30,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   late final TransformationController _transformationController;
   TapDownDetails? _doubleTapDetails;
   int _pageIndex = 0;
+  int _albumCount = 0;
 
   final List<_Photo> _photos = [];
   late List<_Photo> _visiblePhotos = []; // 当前可浏览照片
@@ -49,6 +52,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     _controller = PageController(initialPage: widget.initialIndex);
     debugPrint("@@初始化，当前index: ${widget.initialIndex}");
     _pageIndex = widget.initialIndex;
+    _albumCount = widget.currentAlbumCount;
     _transformationController = TransformationController();
     // _visiblePhotos = List.of(widget.photos);
     _Photo? lastPhoto;
@@ -144,6 +148,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       _pageIndex = _visiblePhotos.length - 1;
     }
 
+    _albumCount -= 1;
     debugPrint(
       "@@取出照片：index=${photo.index}, lastIndex=${last?.index}, nextIdex=${next?.index}, pageIndex=$_pageIndex",
     );
@@ -154,7 +159,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     final last = photo._getLast();
     final next = photo._getNext();
     final index = photo.index;
-
+    _albumCount += 1;
     if (last != null) {
       last.next = photo;
     }
@@ -293,13 +298,21 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('照片查看')),
+      appBar: AppBar(title: Text(widget.currentAlbum.name)),
       backgroundColor: Colors.black,
       body: Column(
         children: [
           Expanded(
             child: Stack(
               children: [
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Text(
+                    "$_pageIndex/$_albumCount",
+                    style: const TextStyle(color: Colors.white, fontSize: 20),
+                  ),
+                ),
                 PageView.builder(
                   controller: _controller,
                   itemCount: _visiblePhotos.length,
