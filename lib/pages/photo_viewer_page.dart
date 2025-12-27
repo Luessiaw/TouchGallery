@@ -3,6 +3,7 @@ import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 // import 'package:flutter_media_delete/flutter_media_delete.dart';
 // import 'dart:io';
+import "package:flutter/widgets.dart";
 
 class PhotoViewerPage extends StatefulWidget {
   final List<AssetEntity> photos;
@@ -28,6 +29,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     with SingleTickerProviderStateMixin {
   late final PageController _controller;
   late final TransformationController _transformationController;
+  // late Map<>
   TapDownDetails? _doubleTapDetails;
   int _pageIndex = 0;
   int _albumCount = 0;
@@ -48,9 +50,9 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       _transformationController.value.getMaxScaleOnAxis() > 1.01;
 
   bool _shouldLoadOriginal(int index) {
-    debugPrint(
-      "@@判断是否加载高清图：index=$index, pageIndex=$_pageIndex, result=${(index - _pageIndex).abs() <= preloadRange}",
-    );
+    // debugPrint(
+    //   "@@判断是否加载高清图：index=$index, pageIndex=$_pageIndex, result=${(index - _pageIndex).abs() <= preloadRange}",
+    // );
     return (index - _pageIndex).abs() <= preloadRange;
   }
 
@@ -108,6 +110,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
         break;
       }
     }
+    // debugPrint("@@获取可见照片，列表长度：${visible.length}");
     return visible;
   }
 
@@ -123,6 +126,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       _visiblePhotos = getVisiblePhotos(_photos);
       debugPrint("@@照片已标记为：删除。");
     });
+    debugDumpApp();
   }
 
   void _movePhoto(AssetPathEntity album) {
@@ -158,7 +162,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
 
     _albumCount -= 1;
     debugPrint(
-      "@@取出照片：index=${photo.index}, lastIndex=${last?.index}, nextIdex=${next?.index}, pageIndex=$_pageIndex",
+      "@@取出照片：index=${photo.index}, lastIndex=${last?.index}, nextIdex=${next?.index}, pageIndex=$_pageIndex, id=${photo.assetEntity.id}",
     );
     return photo;
   }
@@ -337,6 +341,9 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                         ? _deleteAnimController.value *
                               MediaQuery.of(context).size.height
                         : 0.0;
+                    debugPrint(
+                      "@@构建单个Item. index: $index, 照片列表长度：${_visiblePhotos.length}, 照片 index=${_visiblePhotos[index].index}, id=${asset.assetEntity.id}",
+                    );
                     return GestureDetector(
                       behavior: HitTestBehavior.translucent,
                       onDoubleTapDown: (details) {
@@ -409,6 +416,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                               asset: asset.assetEntity,
                               loadOriginal: _shouldLoadOriginal(index),
                               index: _visiblePhotos[index].index,
+                              key: ValueKey(_visiblePhotos[index].index),
                             ),
                           ),
                         ),
@@ -420,7 +428,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                   top: 10,
                   left: 10,
                   child: Text(
-                    "${_pageIndex + 1}/$_albumCount",
+                    (_albumCount > 0) ? "${_pageIndex + 1}/$_albumCount" : "",
                     style: const TextStyle(color: Colors.white, fontSize: 20),
                   ),
                 ),
@@ -643,11 +651,14 @@ class _PhotoPage extends StatefulWidget {
   final AssetEntity asset;
   final bool loadOriginal; // 是否是当前页
   final int index;
+  // final int key;
 
   const _PhotoPage({
+    super.key,
     required this.asset,
     required this.loadOriginal,
     required this.index,
+    // required this.key,
   });
 
   @override
@@ -676,7 +687,7 @@ class _PhotoPageState extends State<_PhotoPage>
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.loadOriginal != widget.loadOriginal) {
-      updateKeepAlive(); // ⭐ 关键
+      updateKeepAlive();
     }
 
     if (widget.loadOriginal && _origin == null) {
@@ -714,14 +725,14 @@ class _PhotoPageState extends State<_PhotoPage>
       cache.evict(_origin!);
     }
     super.dispose();
-    debugPrint("@@照片销毁, index=${widget.index}");
+    // debugPrint("@@照片销毁, index=${widget.index}");
   }
 
   @override
   Widget build(BuildContext context) {
-    debugPrint(
-      "@@创建照片, index=${widget.index}, loadOriginal=${widget.loadOriginal}",
-    );
+    // debugPrint(
+    //   "@@创建照片, index=${widget.index}, loadOriginal=${widget.loadOriginal}",
+    // );
     super.build(context);
     return Center(
       child: Image(image: _origin ?? _thumb, fit: BoxFit.contain),
