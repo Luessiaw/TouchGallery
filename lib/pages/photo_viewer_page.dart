@@ -663,6 +663,9 @@ class _PhotoPageState extends State<_PhotoPage>
   void initState() {
     super.initState();
     _thumb = AssetEntityImageProvider(widget.asset, isOriginal: false);
+    if (widget.loadOriginal) {
+      _origin = AssetEntityImageProvider(widget.asset, isOriginal: true);
+    }
   }
 
   @override
@@ -677,7 +680,9 @@ class _PhotoPageState extends State<_PhotoPage>
     }
 
     if (widget.loadOriginal && _origin == null) {
-      _loadOriginalDelayed();
+      _origin = AssetEntityImageProvider(widget.asset, isOriginal: true);
+      setState(() {});
+      // _loadOriginalDelayed();
     }
 
     if (!widget.loadOriginal && _origin != null) {
@@ -685,15 +690,15 @@ class _PhotoPageState extends State<_PhotoPage>
     }
   }
 
-  void _loadOriginalDelayed() {
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (!mounted || !widget.loadOriginal) return;
+  // void _loadOriginalDelayed() {
+  //   // Future.delayed(const Duration(milliseconds: 300), () {
+  //   //   if (!mounted || !widget.loadOriginal) return;
 
-      setState(() {
-        _origin = AssetEntityImageProvider(widget.asset, isOriginal: true);
-      });
-    });
-  }
+  //   //   setState(() {
+  //   //     _origin = AssetEntityImageProvider(widget.asset, isOriginal: true);
+  //   //   });
+  //   // });
+  // }
 
   void _releaseOriginal() {
     final cache = PaintingBinding.instance.imageCache;
@@ -715,7 +720,7 @@ class _PhotoPageState extends State<_PhotoPage>
   @override
   Widget build(BuildContext context) {
     debugPrint(
-      "@@Build PhotoPage, index=${widget.index}, loadOriginal=${widget.loadOriginal}",
+      "@@创建照片, index=${widget.index}, loadOriginal=${widget.loadOriginal}",
     );
     super.build(context);
     return Center(
