@@ -1,16 +1,26 @@
-# photomanager
+# TouchGallery 图纹
 
-A new Flutter project.
+模仿 SlideBox, 使用手势快速管理手机照片。
 
-## Getting Started
+## 操作说明
+* 上滑：删除照片。
+* 左右滑动：切换照片
+* 点击按钮 $\downarrow$: 移动照片
+* 点击按钮 $\circlearrowleft$: 撤销一步操作
+* 点击按钮 $\checkmark$: 应用所有操作
 
-This project is a starting point for a Flutter application.
+## 注意事项
+* 测试环境
+    * 开发平台：windows 11
+    * 运行设备：荣耀GT Pro
+    * 操作系统：Android 16.0
+    * Flutter版本：3.38.5
+    * Dart版本：3.3.0
 
-A few resources to get you started if this is your first Flutter project:
+## Issues
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+* 由于 Android 16.0 及以上版本对第三方软件权限的限制，本软件中**移动照片**的逻辑为：先复制到新路径，再删除原文件。这导致两个问题：
+    * 照片复制时可能漏掉一些信息，如拍摄位置等。
+    * 在点击 $\checkmark$ 应用移动操作时，也会提示“是否允许删除x张照片”，而非像 SlideBox 那样提示“是否允许移动x张照片”。
+* 在应用删除、移动操作后，从照片查看页返回相册查看页时，由于文件读取逻辑原因，已被删除的文件仍会出现在相册列表中，但不会显示缩略图而是"未找到文件"的提示。此时上下滑动相册页面刷新缓存即可。
+* 按日期对照片进行排序的功能还未开发。
