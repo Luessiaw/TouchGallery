@@ -3,13 +3,12 @@ import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 // import 'package:flutter_media_delete/flutter_media_delete.dart';
 // import 'dart:io';
-import "package:flutter/widgets.dart";
 
 class PhotoViewerPage extends StatefulWidget {
   final List<AssetEntity> photos;
   final int initialIndex;
   final AssetPathEntity currentAlbum;
-  final int currentAlbumCount;
+  final int currentAlbumCount; // 相册内照片总数
   final List<AssetPathEntity> allAlbums;
 
   const PhotoViewerPage({
@@ -156,8 +155,8 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       next.last = last;
     }
 
-    if (_pageIndex >= _visiblePhotos.length) {
-      _pageIndex = _visiblePhotos.length - 1;
+    if (_pageIndex >= _visiblePhotos.length - 1) {
+      _pageIndex -= 1;
     }
 
     _albumCount -= 1;
