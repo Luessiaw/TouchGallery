@@ -57,13 +57,16 @@ class _AlbumsPageState extends State<AlbumsPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('相册'), actions: [
-        IconButton(
-          tooltip: '切换显示隐藏相册',
-          icon: Icon(_showHidden ? Icons.visibility_off : Icons.visibility),
-          onPressed: () => setState(() => _showHidden = !_showHidden),
-        )
-      ]),
+      appBar: AppBar(
+        title: const Text('相册'),
+        actions: [
+          IconButton(
+            tooltip: '切换显示隐藏相册',
+            icon: Icon(_showHidden ? Icons.visibility_off : Icons.visibility),
+            onPressed: () => setState(() => _showHidden = !_showHidden),
+          ),
+        ],
+      ),
       body: ValueListenableBuilder<Set<String>>(
         valueListenable: SettingsService.instance.hiddenAlbumsNotifier,
         builder: (context, hidden, _) {
@@ -152,9 +155,15 @@ class _AlbumsPageState extends State<AlbumsPage> {
                         left: 6,
                         top: 6,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           color: Colors.redAccent.withOpacity(0.8),
-                          child: const Text('隐藏', style: TextStyle(color: Colors.white, fontSize: 12)),
+                          child: const Text(
+                            '隐藏',
+                            style: TextStyle(color: Colors.white, fontSize: 12),
+                          ),
                         ),
                       ),
                   ],

@@ -33,7 +33,11 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _openManageHiddenPage(BuildContext context, Set<String> hiddenIds) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) => ManageHiddenAlbumsPage(albumNames: _albumNames)));
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ManageHiddenAlbumsPage(albumNames: _albumNames),
+      ),
+    );
   }
 
   @override
@@ -45,7 +49,10 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('常用设置', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            const Text(
+              '常用设置',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 12),
             ValueListenableBuilder<Set<String>>(
               valueListenable: SettingsService.instance.hiddenAlbumsNotifier,
@@ -93,7 +100,7 @@ class _ManageHiddenAlbumsPageState extends State<ManageHiddenAlbumsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('管理隐藏相册')),
-      body: ValueListenableBuilder<Set<String>>( 
+      body: ValueListenableBuilder<Set<String>>(
         valueListenable: SettingsService.instance.hiddenAlbumsNotifier,
         builder: (context, hidden, _) {
           return ListView.builder(

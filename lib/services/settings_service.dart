@@ -25,7 +25,9 @@ class SettingsService {
     _logsBox = await Hive.openBox('op_logs');
 
     final List? hidden = _settingsBox.get('hidden_albums') as List?;
-    hiddenAlbumsNotifier.value = hidden == null ? {} : hidden.cast<String>().toSet();
+    hiddenAlbumsNotifier.value = hidden == null
+        ? {}
+        : hidden.cast<String>().toSet();
 
     // Listen to notifier changes and persist
     hiddenAlbumsNotifier.addListener(() {
@@ -40,7 +42,10 @@ class SettingsService {
 
   Future<void> setHiddenAlbums(Set<String> ids) async {
     hiddenAlbumsNotifier.value = Set.from(ids);
-    await _settingsBox.put('hidden_albums', hiddenAlbumsNotifier.value.toList());
+    await _settingsBox.put(
+      'hidden_albums',
+      hiddenAlbumsNotifier.value.toList(),
+    );
   }
 
   Future<void> hideAlbum(String albumId) async {
@@ -113,7 +118,9 @@ class SettingsService {
 
     final list = iter.toList();
     // sort by timestamp desc
-    list.sort((a, b) => (b['timestamp'] as int).compareTo(a['timestamp'] as int));
+    list.sort(
+      (a, b) => (b['timestamp'] as int).compareTo(a['timestamp'] as int),
+    );
 
     final s = offset ?? 0;
     final e = limit == null ? list.length : (s + limit).clamp(0, list.length);
