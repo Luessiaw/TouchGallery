@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/settings_service.dart';
 import '../services/media_service.dart';
+import 'logs_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -49,11 +50,13 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '常用设置',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
+            // const Text(
+            //   '常用设置',
+            //   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            // ),
             const SizedBox(height: 12),
+            if (_loadingAlbums) const LinearProgressIndicator(),
+            const SizedBox(height: 8),
             ValueListenableBuilder<Set<String>>(
               valueListenable: SettingsService.instance.hiddenAlbumsNotifier,
               builder: (context, hidden, _) {
@@ -66,11 +69,22 @@ class _SettingsPageState extends State<SettingsPage> {
               },
             ),
             const Divider(),
-            if (_loadingAlbums) const LinearProgressIndicator(),
-            const SizedBox(height: 8),
-            const Text('注意', style: TextStyle(fontWeight: FontWeight.w500)),
-            const SizedBox(height: 6),
-            const Text('隐藏相册仅影响应用内显示，不会从系统相册删除任何照片。'),
+            ListTile(
+              title: const Text('查看操作日志'),
+              subtitle: const Text('导出为 JSON 或 清空日志'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const LogsPage()));
+              },
+            ),
+            // const Divider(),
+            // if (_loadingAlbums) const LinearProgressIndicator(),
+            // const SizedBox(height: 8),
+            // const Text('注意', style: TextStyle(fontWeight: FontWeight.w500)),
+            // const SizedBox(height: 6),
+            // const Text('隐藏相册仅影响应用内显示，不会从系统相册删除任何照片。'),
           ],
         ),
       ),
