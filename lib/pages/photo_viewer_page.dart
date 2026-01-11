@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
+import '../models/photo_node.dart';
+import '../services/settings_service.dart';
+import '../services/media_service.dart';
 // import 'package:flutter_media_delete/flutter_media_delete.dart';
 // import 'dart:io';
+import 'dart:developer' as dev;
 
 class PhotoViewerPage extends StatefulWidget {
   final List<AssetEntity> photos;
@@ -34,9 +38,9 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   int _albumCount = 0;
   static const int preloadRange = 1;
 
-  final List<_Photo> _photos = [];
-  late List<_Photo> _visiblePhotos = []; // 当前可浏览照片
-  final List<_Photo> _changedPhotos = [];
+  final List<PhotoNode> _photos = [];
+  late List<PhotoNode> _visiblePhotos = []; // 当前可浏览照片
+  final List<PhotoNode> _changedPhotos = [];
 
   double _dragOffsetY = 0.0;
 
@@ -59,14 +63,14 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   void initState() {
     super.initState();
     _controller = PageController(initialPage: widget.initialIndex);
-    debugPrint("@@初始化，当前index: ${widget.initialIndex}");
+    dev.log("@@初始化，当前index: ${widget.initialIndex}", name: 'PhotoManager');
     _pageIndex = widget.initialIndex;
     _albumCount = widget.currentAlbumCount;
     _transformationController = TransformationController();
     // _visiblePhotos = List.of(widget.photos);
-    _Photo? lastPhoto;
+    PhotoNode? lastPhoto;
     for (var i = 0; i < widget.photos.length; i++) {
-      _Photo photo = _Photo(widget.photos[i], widget.currentAlbum, i);
+      PhotoNode photo = PhotoNode(widget.photos[i], widget.currentAlbum, i);
       photo.last = lastPhoto;
       if (lastPhoto != null) {
         lastPhoto.next = photo;
@@ -90,21 +94,21 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     });
   }
 
-  List<_Photo> getVisiblePhotos(List<_Photo> photos) {
+  List<PhotoNode> getVisiblePhotos(List<PhotoNode> photos) {
     // 用 Map 快速根据 index 查找 Photo
 
     // 找到链表的头结点：lastIndex == null 或者链表中没有对应 lastIndex 的
-    _Photo? head = photos.cast<_Photo?>().firstWhere(
-      (p) => (p!.last == null && p.state == 0),
+    PhotoNode? head = photos.cast<PhotoNode?>().firstWhere(
+      (p) => (p!.last == null && p.state == PhotoState.none),
       orElse: () => null,
     );
 
-    List<_Photo> visible = [];
-    _Photo? current = head;
+    List<PhotoNode> visible = [];
+    PhotoNode? current = head;
     while (current != null) {
       visible.add(current);
       if (current.next != null) {
-        current = current._getNext();
+        current = current.getNext();
       } else {
         break;
       }
@@ -120,8 +124,8 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     }
 
     setState(() {
-      _Photo photo = _popPhoto();
-      photo.state = 1;
+      PhotoNode photo = _popPhoto();
+      photo.state = PhotoState.markedDeleted;
       _visiblePhotos = getVisiblePhotos(_photos);
       debugPrint("@@照片已标记为：删除。");
     });
@@ -134,18 +138,18 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     }
 
     setState(() {
-      _Photo photo = _popPhoto();
-      photo.state = 2;
+      PhotoNode photo = _popPhoto();
+      photo.state = PhotoState.markedMoved;
       photo.targetAlbum = album;
       _visiblePhotos = getVisiblePhotos(_photos);
-      debugPrint("@@照片已标记为：移动。target album: ${album.name}");
+      dev.log("@@照片已标记为：移动。target album: ${album.name}", name: 'PhotoManager');
     });
   }
 
-  _Photo _popPhoto() {
+  PhotoNode _popPhoto() {
     final photo = _visiblePhotos[_pageIndex];
-    _Photo? last = photo._getLast();
-    _Photo? next = photo._getNext();
+    PhotoNode? last = photo.getLast();
+    PhotoNode? next = photo.getNext();
     _changedPhotos.add(photo);
 
     if (last != null) {
@@ -160,15 +164,16 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     }
 
     _albumCount -= 1;
-    debugPrint(
+    dev.log(
       "@@取出照片：index=${photo.index}, lastIndex=${last?.index}, nextIdex=${next?.index}, pageIndex=$_pageIndex, id=${photo.assetEntity.id}",
+      name: 'PhotoManager',
     );
     return photo;
   }
 
-  void _recoverPhoto(_Photo photo) {
-    final last = photo._getLast();
-    final next = photo._getNext();
+  void _recoverPhoto(PhotoNode photo) {
+    final last = photo.getLast();
+    final next = photo.getNext();
     final index = photo.index;
     _albumCount += 1;
     if (last != null) {
@@ -178,9 +183,9 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       next.last = photo;
     }
 
-    if (photo.state == 1) {
+    if (photo.state == PhotoState.markedDeleted) {
       debugPrint("@@恢复标记为删除的照片。");
-    } else if (photo.state == 2) {
+    } else if (photo.state == PhotoState.markedMoved) {
       debugPrint("@@恢复标记为移动的照片。target album: ${photo.targetAlbum?.name}.");
       photo.targetAlbum = null;
     } else {
@@ -190,7 +195,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     debugPrint(
       "@@恢复照片。index=$index, lastIndex=${last?.index}, nextIndex=${next?.index}.",
     );
-    photo.state = 0;
+    photo.state = PhotoState.none;
     photo.targetAlbum = null;
     _visiblePhotos = getVisiblePhotos(_photos);
     _pageIndex = _visiblePhotos.indexWhere((p) => p.index == photo.index);
@@ -236,9 +241,9 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     }
 
     setState(() {
-      _changedPhotos.removeWhere((_Photo photo) {
+      _changedPhotos.removeWhere((PhotoNode photo) {
         if (deletedIds.contains(photo.assetEntity.id)) {
-          photo.state = 3;
+          photo.state = PhotoState.applied;
           return true;
         }
         return false;
@@ -257,16 +262,16 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   /// 删除单张或多张照片/视频
   /// assetIds: photo_manager 获取的 AssetEntity.id
   static Future<List<String>> _deleteOrMoveMedia(
-    List<_Photo> changedPhotos,
+    List<PhotoNode> changedPhotos,
   ) async {
     final List<String> toDeleteIds = [];
-    final List<_Photo> toMovePhotos = [];
+    final List<PhotoNode> toMovePhotos = [];
     final List<String> movedIds = [];
     for (int i = 0; i < changedPhotos.length; i++) {
       var photo = changedPhotos[i];
-      if (photo.state == 1) {
+      if (photo.state == PhotoState.markedDeleted) {
         toDeleteIds.add(photo.assetEntity.id);
-      } else if (photo.state == 2) {
+      } else if (photo.state == PhotoState.markedMoved) {
         toMovePhotos.add(photo);
       }
     }
@@ -275,13 +280,32 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     );
     debugPrint("@@要删除的照片 id: $toDeleteIds");
     // 尝试移动照片
-    for (_Photo photo in toMovePhotos) {
+    for (PhotoNode photo in toMovePhotos) {
       try {
         if (photo.targetAlbum != null) {
           final AssetEntity newAst = await PhotoManager.editor.copyAssetToPath(
             asset: photo.assetEntity,
             pathEntity: photo.targetAlbum!,
           );
+
+          // Record move operation (old id -> new id) and update in-memory node
+          try {
+            await SettingsService.instance.appendOperation({
+              'type': 'move',
+              'assetId': photo.assetEntity.id,
+              'newAssetId': newAst.id,
+              'fromAlbumId': photo.album.id,
+              'toAlbumId': photo.targetAlbum?.id,
+              'fromIndex': photo.index,
+              'extra': {},
+            });
+          } catch (e) {
+            debugPrint('@@记录移动操作失败: $e');
+          }
+
+          // Update the PhotoNode to point to the new asset id
+          photo.currentAssetId = newAst.id;
+
           movedIds.add(photo.assetEntity.id);
           toDeleteIds.add(photo.assetEntity.id);
           debugPrint(
@@ -303,6 +327,85 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       debugPrint('@@删除失败: $e');
       return [];
       // List<String> deletedIds = [];
+    }
+  }
+
+  Future<void> _createAlbumFlow() async {
+    final name = await showDialog<String?>(
+      context: context,
+      builder: (ctx) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('新建相册'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(labelText: '相册名称'),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+              child: const Text('创建'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (name == null || name.isEmpty) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('正在创建相册…')));
+
+    AssetPathEntity? created;
+
+    try {
+      final editor = PhotoManager.editor;
+      try {
+        // Use dynamic invocation to avoid depending on a specific API surface at compile time.
+        final r = await (editor as dynamic).createAlbum(name);
+        if (r is AssetPathEntity) created = r;
+      } catch (e) {
+        dev.log(
+          'createAlbum() dynamic invocation failed: $e',
+          name: 'PhotoManager',
+        );
+      }
+
+      if (created == null) {
+        // Refresh album list and try to find by name
+        final albums = await MediaService.getAlbums();
+        try {
+          created = albums.firstWhere((a) => a.name == name);
+        } catch (e) {
+          created = null;
+        }
+      }
+
+      if (created == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('创建相册失败（权限或平台不支持）')));
+        return;
+      }
+
+      // Use existing move flow: mark current photo to be moved to the new album
+      final album = created;
+      _movePhoto(album);
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('已创建相册并标记移动，点击“应用更改”以执行操作')));
+    } catch (e) {
+      dev.log('创建相册或标记移动时出错: $e', name: 'PhotoManager');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('创建相册失败：$e')));
     }
   }
 
@@ -488,20 +591,28 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   Widget _buildAlbumActionBar() {
     return SizedBox(
       height: 96,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        itemCount: widget.allAlbums.length + 1,
-        itemBuilder: (context, index) {
-          if (index == widget.allAlbums.length) {
-            // 新建相册占位
-            return _buildCreateAlbumButton();
-          }
+      child: ValueListenableBuilder<Set<String>>(
+        valueListenable: SettingsService.instance.hiddenAlbumsNotifier,
+        builder: (context, hidden, _) {
+          final visibleAlbums = widget.allAlbums
+              .where((a) => !hidden.contains(a.id))
+              .toList();
+          return ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: visibleAlbums.length + 1,
+            itemBuilder: (context, index) {
+              if (index == visibleAlbums.length) {
+                // 新建相册占位
+                return _buildCreateAlbumButton();
+              }
 
-          final album = widget.allAlbums[index];
-          final isCurrent = album.id == widget.currentAlbum.id;
+              final album = visibleAlbums[index];
+              final isCurrent = album.id == widget.currentAlbum.id;
 
-          return _buildAlbumButton(album: album, disabled: isCurrent);
+              return _buildAlbumButton(album: album, disabled: isCurrent);
+            },
+          );
         },
       ),
     );
@@ -521,9 +632,11 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
               Icons.arrow_downward,
               color: disabled ? Colors.grey : Colors.white,
             ),
-            onPressed: () {
-              _movePhoto(album);
-            },
+            onPressed: disabled
+                ? null
+                : () {
+                    _movePhoto(album);
+                  },
             tooltip: '移动照片',
           ),
           const SizedBox(height: 6),
@@ -549,9 +662,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: GestureDetector(
-        onTap: () {
-          // debugPrint('@@点击了新建相册。');
-        },
+        onTap: _createAlbumFlow,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
@@ -571,43 +682,6 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
         ),
       ),
     );
-  }
-}
-
-class _Photo {
-  final AssetEntity assetEntity;
-  final AssetPathEntity album;
-  int index;
-  _Photo? last;
-  _Photo? next;
-  AssetPathEntity? targetAlbum;
-
-  int state = 0; //0: 未操作 1: 标记为删除 2: 标记为移动 3: 已应用删除或移动
-
-  _Photo(this.assetEntity, this.album, this.index);
-
-  _Photo? _getLast() {
-    // 从链表中
-    if (last == null) {
-      return null;
-    }
-    if (last!.state < 3) {
-      return last;
-    } else {
-      return last!._getLast();
-    }
-  }
-
-  _Photo? _getNext() {
-    // 从链表中
-    if (next == null) {
-      return null;
-    }
-    if (next!.state < 3) {
-      return next;
-    } else {
-      return next!._getNext();
-    }
   }
 }
 

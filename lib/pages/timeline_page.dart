@@ -7,7 +7,7 @@ class TimelinePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('按日期')),
+      appBar: AppBar(title: const Text('最近')),
       body: ListView.builder(
         itemCount: 5,
         itemBuilder: (context, index) {

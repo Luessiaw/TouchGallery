@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'pages/albums_page.dart';
 import 'pages/timeline_page.dart';
+import 'pages/settings_page.dart';
 import 'package:flutter/foundation.dart';
+import 'services/settings_service.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // 初始化 settings service（内部会初始化 Hive）
+  await SettingsService.instance.init();
+
   // 重写 debugPrint，只打印前缀带 @ 的消息
   debugPrint = (String? message, {int? wrapWidth}) {
     if (message != null && message.startsWith('@')) {
       debugPrintSynchronously(message, wrapWidth: wrapWidth);
     }
   };
+
   runApp(const PhotoManagerApp());
 }
 
@@ -36,7 +43,7 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int _currentIndex = 0;
 
-  final _pages = const [AlbumsPage(), TimelinePage()];
+  final _pages = const [AlbumsPage(), TimelinePage(), SettingsPage()];
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +62,7 @@ class _MainPageState extends State<MainPage> {
             icon: Icon(Icons.calendar_today),
             label: '日期',
           ),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: '设置'),
         ],
       ),
     );
