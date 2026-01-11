@@ -511,20 +511,28 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   Widget _buildAlbumActionBar() {
     return SizedBox(
       height: 96,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        itemCount: widget.allAlbums.length + 1,
-        itemBuilder: (context, index) {
-          if (index == widget.allAlbums.length) {
-            // 新建相册占位
-            return _buildCreateAlbumButton();
-          }
+      child: ValueListenableBuilder<Set<String>>(
+        valueListenable: SettingsService.instance.hiddenAlbumsNotifier,
+        builder: (context, hidden, _) {
+          final visibleAlbums = widget.allAlbums
+              .where((a) => !hidden.contains(a.id))
+              .toList();
+          return ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: visibleAlbums.length + 1,
+            itemBuilder: (context, index) {
+              if (index == visibleAlbums.length) {
+                // 新建相册占位
+                return _buildCreateAlbumButton();
+              }
 
-          final album = widget.allAlbums[index];
-          final isCurrent = album.id == widget.currentAlbum.id;
+              final album = visibleAlbums[index];
+              final isCurrent = album.id == widget.currentAlbum.id;
 
-          return _buildAlbumButton(album: album, disabled: isCurrent);
+              return _buildAlbumButton(album: album, disabled: isCurrent);
+            },
+          );
         },
       ),
     );
@@ -544,9 +552,11 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
               Icons.arrow_downward,
               color: disabled ? Colors.grey : Colors.white,
             ),
-            onPressed: () {
-              _movePhoto(album);
-            },
+            onPressed: disabled
+                ? null
+                : () {
+                    _movePhoto(album);
+                  },
             tooltip: '移动照片',
           ),
           const SizedBox(height: 6),

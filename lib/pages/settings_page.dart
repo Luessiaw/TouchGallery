@@ -69,16 +69,16 @@ class _SettingsPageState extends State<SettingsPage> {
               },
             ),
             // const Divider(),
-            ListTile(
-              title: const Text('查看操作日志'),
-              // subtitle: const Text('导出为 JSON 或 清空日志'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () async {
-                Navigator.of(
-                  context,
-                ).push(MaterialPageRoute(builder: (_) => const LogsPage()));
-              },
-            ),
+            // ListTile(
+            //   title: const Text('查看操作日志'),
+            //   // subtitle: const Text('导出为 JSON 或 清空日志'),
+            //   trailing: const Icon(Icons.chevron_right),
+            //   onTap: () async {
+            //     Navigator.of(
+            //       context,
+            //     ).push(MaterialPageRoute(builder: (_) => const LogsPage()));
+            //   },
+            // ),
             // const Divider(),
             // if (_loadingAlbums) const LinearProgressIndicator(),
             // const SizedBox(height: 8),
@@ -126,7 +126,7 @@ class _ManageHiddenAlbumsPageState extends State<ManageHiddenAlbumsPage> {
               final isHidden = hidden.contains(id);
               return SwitchListTile(
                 title: Text(name),
-                subtitle: Text(id, style: const TextStyle(fontSize: 11)),
+                // subtitle: Text(id, style: const TextStyle(fontSize: 11)),
                 value: isHidden,
                 onChanged: (v) async {
                   if (v) {
