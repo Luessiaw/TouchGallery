@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/settings_service.dart';
 import '../services/media_service.dart';
-import 'logs_page.dart';
+// import 'logs_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
