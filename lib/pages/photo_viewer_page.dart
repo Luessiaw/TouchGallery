@@ -3,6 +3,7 @@ import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import '../models/photo_node.dart';
 import '../services/settings_service.dart';
+import '../services/media_service.dart';
 // import 'package:flutter_media_delete/flutter_media_delete.dart';
 // import 'dart:io';
 import 'dart:developer' as dev;
@@ -329,6 +330,85 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     }
   }
 
+  Future<void> _createAlbumFlow() async {
+    final name = await showDialog<String?>(
+      context: context,
+      builder: (ctx) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('新建相册'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(labelText: '相册名称'),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+              child: const Text('创建'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (name == null || name.isEmpty) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('正在创建相册…')));
+
+    AssetPathEntity? created;
+
+    try {
+      final editor = PhotoManager.editor;
+      try {
+        // Use dynamic invocation to avoid depending on a specific API surface at compile time.
+        final r = await (editor as dynamic).createAlbum(name);
+        if (r is AssetPathEntity) created = r;
+      } catch (e) {
+        dev.log(
+          'createAlbum() dynamic invocation failed: $e',
+          name: 'PhotoManager',
+        );
+      }
+
+      if (created == null) {
+        // Refresh album list and try to find by name
+        final albums = await MediaService.getAlbums();
+        try {
+          created = albums.firstWhere((a) => a.name == name);
+        } catch (e) {
+          created = null;
+        }
+      }
+
+      if (created == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('创建相册失败（权限或平台不支持）')));
+        return;
+      }
+
+      // Use existing move flow: mark current photo to be moved to the new album
+      final album = created;
+      _movePhoto(album);
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('已创建相册并标记移动，点击“应用更改”以执行操作')));
+    } catch (e) {
+      dev.log('创建相册或标记移动时出错: $e', name: 'PhotoManager');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('创建相册失败：$e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -582,9 +662,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: GestureDetector(
-        onTap: () {
-          // debugPrint('@@点击了新建相册。');
-        },
+        onTap: _createAlbumFlow,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
