@@ -46,7 +46,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('设置')),
       body: Padding(
-        padding: const EdgeInsets.all(10.0),
+        padding: const EdgeInsets.all(8.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -68,7 +68,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 );
               },
             ),
-            const Divider(),
+            // const Divider(),
             ListTile(
               title: const Text('查看操作日志'),
               // subtitle: const Text('导出为 JSON 或 清空日志'),
