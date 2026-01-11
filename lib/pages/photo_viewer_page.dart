@@ -5,6 +5,7 @@ import '../models/photo_node.dart';
 import '../services/settings_service.dart';
 // import 'package:flutter_media_delete/flutter_media_delete.dart';
 // import 'dart:io';
+import 'dart:developer' as dev;
 
 class PhotoViewerPage extends StatefulWidget {
   final List<AssetEntity> photos;
@@ -61,7 +62,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   void initState() {
     super.initState();
     _controller = PageController(initialPage: widget.initialIndex);
-    debugPrint("@@初始化，当前index: ${widget.initialIndex}");
+    dev.log("@@初始化，当前index: ${widget.initialIndex}", name: 'PhotoManager');
     _pageIndex = widget.initialIndex;
     _albumCount = widget.currentAlbumCount;
     _transformationController = TransformationController();
@@ -97,7 +98,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
 
     // 找到链表的头结点：lastIndex == null 或者链表中没有对应 lastIndex 的
     PhotoNode? head = photos.cast<PhotoNode?>().firstWhere(
-      (p) => (p!.last == null && p.state != PhotoState.applied),
+      (p) => (p!.last == null && p.state == PhotoState.none),
       orElse: () => null,
     );
 
@@ -140,7 +141,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       photo.state = PhotoState.markedMoved;
       photo.targetAlbum = album;
       _visiblePhotos = getVisiblePhotos(_photos);
-      debugPrint("@@照片已标记为：移动。target album: ${album.name}");
+      dev.log("@@照片已标记为：移动。target album: ${album.name}", name: 'PhotoManager');
     });
   }
 
@@ -162,8 +163,9 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     }
 
     _albumCount -= 1;
-    debugPrint(
+    dev.log(
       "@@取出照片：index=${photo.index}, lastIndex=${last?.index}, nextIdex=${next?.index}, pageIndex=$_pageIndex, id=${photo.assetEntity.id}",
+      name: 'PhotoManager',
     );
     return photo;
   }

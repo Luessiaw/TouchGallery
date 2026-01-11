@@ -46,7 +46,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('设置')),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(10.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -54,7 +54,7 @@ class _SettingsPageState extends State<SettingsPage> {
             //   '常用设置',
             //   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             // ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             if (_loadingAlbums) const LinearProgressIndicator(),
             const SizedBox(height: 8),
             ValueListenableBuilder<Set<String>>(
@@ -62,7 +62,7 @@ class _SettingsPageState extends State<SettingsPage> {
               builder: (context, hidden, _) {
                 return ListTile(
                   title: const Text('批量管理隐藏相册'),
-                  subtitle: Text('当前隐藏 ${hidden.length} 个相册'),
+                  // subtitle: Text('当前隐藏 ${hidden.length} 个相册'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _openManageHiddenPage(context, hidden),
                 );
@@ -71,7 +71,7 @@ class _SettingsPageState extends State<SettingsPage> {
             const Divider(),
             ListTile(
               title: const Text('查看操作日志'),
-              subtitle: const Text('导出为 JSON 或 清空日志'),
+              // subtitle: const Text('导出为 JSON 或 清空日志'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () async {
                 Navigator.of(
