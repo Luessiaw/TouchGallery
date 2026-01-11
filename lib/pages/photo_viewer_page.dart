@@ -357,6 +357,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     );
 
     if (name == null || name.isEmpty) return;
+    if (!mounted) return;
 
     ScaffoldMessenger.of(
       context,
@@ -388,9 +389,11 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       }
 
       if (created == null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('创建相册失败（权限或平台不支持）')));
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('创建相册失败（权限或平台不支持）')));
+        }
         return;
       }
 
@@ -398,14 +401,18 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       final album = created;
       _movePhoto(album);
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('已创建相册并标记移动，点击“应用更改”以执行操作')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('已创建相册并标记移动，点击“应用更改”以执行操作')),
+        );
+      }
     } catch (e) {
       dev.log('创建相册或标记移动时出错: $e', name: 'PhotoManager');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('创建相册失败：$e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('创建相册失败：$e')));
+      }
     }
   }
 

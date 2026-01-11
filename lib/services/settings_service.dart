@@ -3,8 +3,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 /// A simple settings service using Hive for persistence.
 ///
-/// - Hidden albums are stored under box `settings` with key `hidden_albums` as List<String>.
-/// - Operation logs are stored in box `op_logs` as Map entries (append-only).
+/// - Hidden albums are stored under box `settings` with key `hidden_albums` as `List<String>`.
+/// - Operation logs are stored in box `op_logs` as `Map` entries (append-only).
 class SettingsService {
   SettingsService._internal();
 
@@ -64,7 +64,7 @@ class SettingsService {
     }
   }
 
-  /// Operation log format stored as Map<String, dynamic>:
+  /// Operation log format stored as `Map<String, dynamic>`:
   /// {
   ///   'id': int (auto increment by Hive),
   ///   'timestamp': millisSinceEpoch,
@@ -74,7 +74,7 @@ class SettingsService {
   ///   'toAlbumId': String?,
   ///   'fromIndex': int?,
   ///   'toIndex': int?,
-  ///   'extra': Map<String, dynamic>?
+  ///   'extra': `Map<String, dynamic>`?
   /// }
   Future<int> appendOperation(Map<String, dynamic> op) async {
     final entry = Map<String, dynamic>.from(op);

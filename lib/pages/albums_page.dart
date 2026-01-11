@@ -159,7 +159,9 @@ class _AlbumsPageState extends State<AlbumsPage> {
                             horizontal: 6,
                             vertical: 2,
                           ),
-                          color: Colors.redAccent.withOpacity(0.8),
+                          color: Colors.redAccent.withAlpha(
+                            (0.8 * 255).round(),
+                          ),
                           child: const Text(
                             '隐藏',
                             style: TextStyle(color: Colors.white, fontSize: 12),

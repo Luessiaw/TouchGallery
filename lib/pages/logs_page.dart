@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import '../services/settings_service.dart';
 
 class LogsPage extends StatefulWidget {
-  const LogsPage({Key? key}) : super(key: key);
+  const LogsPage({super.key});
 
   @override
   State<LogsPage> createState() => _LogsPageState();
@@ -31,9 +31,11 @@ class _LogsPageState extends State<LogsPage> {
       });
     } catch (e) {
       debugPrint('@@加载日志失败: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('加载日志失败：$e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('加载日志失败：$e')));
+      }
     } finally {
       setState(() => _loading = false);
     }
@@ -43,14 +45,18 @@ class _LogsPageState extends State<LogsPage> {
     try {
       final jsonStr = const JsonEncoder.withIndent('  ').convert(_logs);
       await Clipboard.setData(ClipboardData(text: jsonStr));
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('已复制日志 JSON 到剪贴板。')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('已复制日志 JSON 到剪贴板。')));
+      }
     } catch (e) {
       debugPrint('@@导出日志失败: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('导出失败：$e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('导出失败：$e')));
+      }
     }
   }
 
@@ -77,14 +83,18 @@ class _LogsPageState extends State<LogsPage> {
       try {
         await SettingsService.instance.clearAllLogs();
         await _loadLogs();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('已清空所有日志。')));
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('已清空所有日志。')));
+        }
       } catch (e) {
         debugPrint('@@清空日志失败: $e');
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('清空日志失败：$e')));
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('清空日志失败：$e')));
+        }
       }
     }
   }
@@ -152,8 +162,8 @@ class _LogsPageState extends State<LogsPage> {
               )
             : ListView.separated(
                 itemCount: _logs.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (_, idx) => _buildLogTile(_logs[idx]),
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, idx) => _buildLogTile(_logs[idx]),
               ),
       ),
     );
