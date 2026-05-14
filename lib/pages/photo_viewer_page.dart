@@ -44,10 +44,10 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
 
   double _dragOffsetY = 0.0;
 
-  late AnimationController _deleteAnimController;
+  // late AnimationController _deleteAnimController;
   // late Animation<double> _deleteAnim;
 
-  bool _isDeleting = false;
+  // bool _isDeleting = false;
 
   bool get _isZoomed =>
       _transformationController.value.getMaxScaleOnAxis() > 1.01;
@@ -80,18 +80,18 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     }
     _visiblePhotos = getVisiblePhotos(_photos);
 
-    _deleteAnimController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
-    );
+    // _deleteAnimController = AnimationController(
+    //   vsync: this,
+    //   duration: const Duration(milliseconds: 250),
+    // );
 
-    _deleteAnimController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        _deleteAnimController.reset();
-        _isDeleting = false;
-        _deletePhoto();
-      }
-    });
+    // _deleteAnimController.addStatusListener((status) {
+    //   if (status == AnimationStatus.completed) {
+    //     _deleteAnimController.reset();
+    //     _isDeleting = false;
+    //     _deletePhoto();
+    //   }
+    // });
   }
 
   List<PhotoNode> getVisiblePhotos(List<PhotoNode> photos) {
@@ -218,7 +218,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
 
   @override
   void dispose() {
-    _deleteAnimController.dispose();
+    // _deleteAnimController.dispose();
     _controller.dispose();
     _transformationController.dispose();
     super.dispose();
@@ -446,10 +446,11 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                   },
                   itemBuilder: (context, index) {
                     final asset = _visiblePhotos[index];
-                    final deleteOffset = (_isDeleting && index == _pageIndex)
-                        ? _deleteAnimController.value *
-                              MediaQuery.of(context).size.height
-                        : 0.0;
+                    // final deleteOffset = (_isDeleting && index == _pageIndex)
+                    //     ? _deleteAnimController.value *
+                    //           MediaQuery.of(context).size.height
+                    //     : 0.0;
+                    final deleteOffset = 0.0;
                     debugPrint(
                       "@@构建单个Item. index: $index, 照片列表长度：${_visiblePhotos.length}, 照片 index=${_visiblePhotos[index].index}, id=${asset.assetEntity.id}",
                     );
@@ -483,21 +484,9 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                           ? null
                           : (details) {
                               debugPrint("点击事件：竖直拖动松开");
-                              const deleteThreshold = -150;
-
-                              if (_isDeleting) return;
-
-                              if (_dragOffsetY < deleteThreshold) {
+                              setState(() {
                                 _dragOffsetY = 0;
-                                setState(() {
-                                  _isDeleting = true;
-                                });
-                                _deleteAnimController.forward();
-                              } else {
-                                setState(() {
-                                  _dragOffsetY = 0;
-                                });
-                              }
+                              });
                             },
                       onVerticalDragUpdate: _isZoomed
                           ? null
@@ -542,30 +531,39 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                   ),
                 ),
                 Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 120,
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 150),
-                    opacity: _dragOffsetY < -50 ? 0.8 : 0.0,
-                    child: Container(
-                      color: const Color.fromARGB(
-                        255,
-                        132,
-                        31,
-                        23,
-                      ).withValues(),
-                      child: const Center(
-                        child: Icon(
-                          Icons.delete,
-                          color: Colors.white,
-                          size: 36,
-                        ),
-                      ),
-                    ),
+                  left: 16,
+                  bottom: 8,
+                  child: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.white),
+                    onPressed: _deletePhoto,
+                    tooltip: '删除',
                   ),
                 ),
+                // Positioned(
+                //   top: 0,
+                //   left: 0,
+                //   right: 0,
+                //   height: 120,
+                //   child: AnimatedOpacity(
+                //     duration: const Duration(milliseconds: 150),
+                //     opacity: _dragOffsetY < -50 ? 0.8 : 0.0,
+                //     child: Container(
+                //       color: const Color.fromARGB(
+                //         255,
+                //         132,
+                //         31,
+                //         23,
+                //       ).withValues(),
+                //       child: const Center(
+                //         child: Icon(
+                //           Icons.delete,
+                //           color: Colors.white,
+                //           size: 36,
+                //         ),
+                //       ),
+                //     ),
+                //   ),
+                // ),
               ],
             ),
           ),
