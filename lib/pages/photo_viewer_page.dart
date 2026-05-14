@@ -530,40 +530,6 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                     style: const TextStyle(color: Colors.white, fontSize: 20),
                   ),
                 ),
-                Positioned(
-                  left: 16,
-                  bottom: 8,
-                  child: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.white),
-                    onPressed: _deletePhoto,
-                    tooltip: '删除',
-                  ),
-                ),
-                // Positioned(
-                //   top: 0,
-                //   left: 0,
-                //   right: 0,
-                //   height: 120,
-                //   child: AnimatedOpacity(
-                //     duration: const Duration(milliseconds: 150),
-                //     opacity: _dragOffsetY < -50 ? 0.8 : 0.0,
-                //     child: Container(
-                //       color: const Color.fromARGB(
-                //         255,
-                //         132,
-                //         31,
-                //         23,
-                //       ).withValues(),
-                //       child: const Center(
-                //         child: Icon(
-                //           Icons.delete,
-                //           color: Colors.white,
-                //           size: 36,
-                //         ),
-                //       ),
-                //     ),
-                //   ),
-                // ),
               ],
             ),
           ),
@@ -572,6 +538,11 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.white),
+                  onPressed: _deletePhoto,
+                  tooltip: '删除当前照片',
+                ),
                 IconButton(
                   icon: const Icon(Icons.undo),
                   color: Colors.white,
