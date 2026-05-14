@@ -480,25 +480,25 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
                             ..scaleByDouble(3.0, 3.0, 1.0, 1.0);
                         }
                       },
-                      onVerticalDragEnd: _isZoomed
-                          ? null
-                          : (details) {
-                              debugPrint("点击事件：竖直拖动松开");
-                              setState(() {
-                                _dragOffsetY = 0;
-                              });
-                            },
-                      onVerticalDragUpdate: _isZoomed
-                          ? null
-                          : (details) {
-                              setState(() {
-                                _dragOffsetY += details.delta.dy;
-                                // 只允许向上拖（负值）
-                                if (_dragOffsetY > 0) {
-                                  _dragOffsetY = 0;
-                                }
-                              });
-                            },
+                      // onVerticalDragEnd: _isZoomed
+                      //     ? null
+                      //     : (details) {
+                      //         debugPrint("点击事件：竖直拖动松开");
+                      //         setState(() {
+                      //           _dragOffsetY = 0;
+                      //         });
+                      //       },
+                      // onVerticalDragUpdate: _isZoomed
+                      //     ? null
+                      //     : (details) {
+                      //         setState(() {
+                      //           _dragOffsetY += details.delta.dy;
+                      //           // 只允许向上拖（负值）
+                      //           if (_dragOffsetY > 0) {
+                      //             _dragOffsetY = 0;
+                      //           }
+                      //         });
+                      //       },
                       child: Transform.translate(
                         offset: Offset(0, _dragOffsetY + deleteOffset),
                         child: AnimatedContainer(
