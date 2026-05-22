@@ -6,7 +6,6 @@ import '../services/settings_service.dart';
 import '../services/media_service.dart';
 // import 'package:flutter_media_delete/flutter_media_delete.dart';
 // import 'dart:io';
-import 'dart:developer' as dev;
 
 class PhotoViewerPage extends StatefulWidget {
   final List<AssetEntity> photos;
@@ -63,7 +62,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
   void initState() {
     super.initState();
     _controller = PageController(initialPage: widget.initialIndex);
-    dev.log("@@初始化，当前index: ${widget.initialIndex}", name: 'PhotoManager');
+    debugPrint("@@初始化，当前index: ${widget.initialIndex}");
     _pageIndex = widget.initialIndex;
     _albumCount = widget.currentAlbumCount;
     _transformationController = TransformationController();
@@ -142,7 +141,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       photo.state = PhotoState.markedMoved;
       photo.targetAlbum = album;
       _visiblePhotos = getVisiblePhotos(_photos);
-      dev.log("@@照片已标记为：移动。target album: ${album.name}", name: 'PhotoManager');
+      debugPrint("@@照片已标记为：移动。target album: ${album.name}");
     });
   }
 
@@ -164,9 +163,8 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     }
 
     _albumCount -= 1;
-    dev.log(
+    debugPrint(
       "@@取出照片：index=${photo.index}, lastIndex=${last?.index}, nextIdex=${next?.index}, pageIndex=$_pageIndex, id=${photo.assetEntity.id}",
-      name: 'PhotoManager',
     );
     return photo;
   }
@@ -334,6 +332,7 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
     final name = await showDialog<String?>(
       context: context,
       builder: (ctx) {
+        debugPrint("@@点击了新建相册按钮。");
         final controller = TextEditingController();
         return AlertDialog(
           title: const Text('新建相册'),
@@ -356,9 +355,33 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
       },
     );
 
-    if (name == null || name.isEmpty) return;
+    debugPrint("@@新建相册名：$name");
+    if (name == null || name.isEmpty) {
+      debugPrint('@@用户取消了对话框或输入为空');
+      return;
+    }
     if (!mounted) return;
 
+    // 检查权限
+    debugPrint('@@开始检查权限...');
+    final permResult = await PhotoManager.requestPermissionExtend();
+    debugPrint(
+      '@@创建相册前权限状态: isAuth=${permResult.isAuth}, hasAccess=${permResult.hasAccess}, isLimited=${permResult.isLimited}',
+    );
+
+    if (!permResult.isAuth) {
+      debugPrint('@@权限被拒绝 (isAuth=false)，无法创建相册');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('权限被拒绝，无法创建相册。请在系统设置中授予权限。')),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+
+    debugPrint('@@权限检查通过，开始创建相册: $name');
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('正在创建相册…')));
@@ -367,28 +390,38 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
 
     try {
       final editor = PhotoManager.editor;
+      debugPrint('@@尝试调用 createAlbum($name)...');
       try {
         // Use dynamic invocation to avoid depending on a specific API surface at compile time.
         final r = await (editor as dynamic).createAlbum(name);
-        if (r is AssetPathEntity) created = r;
+        if (r is AssetPathEntity) {
+          created = r;
+          debugPrint(
+            '@@createAlbum 返回了 AssetPathEntity，id=${r.id}, name=${r.name}',
+          );
+        } else {
+          debugPrint('@@createAlbum 返回了非 AssetPathEntity 类型: ${r.runtimeType}');
+        }
       } catch (e) {
-        dev.log(
-          'createAlbum() dynamic invocation failed: $e',
-          name: 'PhotoManager',
-        );
+        debugPrint('@@createAlbum() 调用失败: $e');
       }
 
       if (created == null) {
+        debugPrint('@@createAlbum 未返回有效的相册，尝试从相册列表查找...');
         // Refresh album list and try to find by name
         final albums = await MediaService.getAlbums();
+        debugPrint('@@获取了 ${albums.length} 个相册');
         try {
           created = albums.firstWhere((a) => a.name == name);
+          debugPrint('@@从相册列表中找到了新建的相册: ${created.name}');
         } catch (e) {
+          debugPrint('@@从相册列表中未找到相册: $e');
           created = null;
         }
       }
 
       if (created == null) {
+        debugPrint('@@创建相册失败：无法获得 AssetPathEntity');
         if (mounted) {
           ScaffoldMessenger.of(
             context,
@@ -396,6 +429,8 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
         }
         return;
       }
+
+      debugPrint('@@相册创建成功，准备标记移动');
 
       // Use existing move flow: mark current photo to be moved to the new album
       final album = created;
@@ -406,8 +441,9 @@ class _PhotoViewerPageState extends State<PhotoViewerPage>
           const SnackBar(content: Text('已创建相册并标记移动，点击“应用更改”以执行操作')),
         );
       }
+      debugPrint('@@已标记照片移动至新相册 ${album.name}');
     } catch (e) {
-      dev.log('创建相册或标记移动时出错: $e', name: 'PhotoManager');
+      debugPrint('@@创建相册或标记移动时出错: $e\n${StackTrace.current}');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
