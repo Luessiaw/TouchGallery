@@ -16,7 +16,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
   List<AssetPathEntity> _albums = [];
   List<int> _albumCounts = [];
   bool _loading = true;
-  bool _showHidden = false;
+  bool _showHiddenAlbums = false;
 
   @override
   void initState() {
@@ -60,23 +60,28 @@ class _AlbumsPageState extends State<AlbumsPage> {
       appBar: AppBar(
         title: const Text('相册'),
         actions: [
-          IconButton(
-            tooltip: '切换显示隐藏相册',
-            icon: Icon(_showHidden ? Icons.visibility_off : Icons.visibility),
-            onPressed: () => setState(() => _showHidden = !_showHidden),
+          PopupMenuButton(
+            tooltip: '相册管理',
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem(
+                child: Text(_showHiddenAlbums ? '不显示被隐藏的相册' : '显示被隐藏的相册'),
+                onTap: () =>
+                    setState(() => _showHiddenAlbums = !_showHiddenAlbums),
+              ),
+            ],
           ),
         ],
       ),
       body: ValueListenableBuilder<Set<String>>(
         valueListenable: SettingsService.instance.hiddenAlbumsNotifier,
         builder: (context, hidden, _) {
-          // 根据 _showHidden 与 hidden 集合决定显示哪些相册
+          // 根据 _showHiddenAlbums 与 hidden 集合决定显示哪些相册
           final visibleEntries = <MapEntry<AssetPathEntity, int>>[];
           for (var i = 0; i < _albums.length; i++) {
             final a = _albums[i];
             final count = _albumCounts.length > i ? _albumCounts[i] : 0;
             final isHidden = hidden.contains(a.id);
-            if (!_showHidden && isHidden) continue;
+            if (!_showHiddenAlbums && isHidden) continue;
             visibleEntries.add(MapEntry(a, count));
           }
 
@@ -114,6 +119,9 @@ class _AlbumsPageState extends State<AlbumsPage> {
                     await _loadAlbums();
                   });
                 },
+                onLongPress: () {
+                  _showAlbumMenu(context, album, isHidden);
+                },
                 child: Stack(
                   children: [
                     Positioned.fill(child: AlbumCover(album: album)),
@@ -129,7 +137,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
                           children: [
                             Expanded(
                               child: Text(
-                                album.name,
+                                isHidden ? '${album.name}（隐藏）' : album.name,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
@@ -150,30 +158,38 @@ class _AlbumsPageState extends State<AlbumsPage> {
                         ),
                       ),
                     ),
-                    if (isHidden && _showHidden)
-                      Positioned(
-                        left: 6,
-                        top: 6,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          color: Colors.redAccent.withAlpha(
-                            (0.8 * 255).round(),
-                          ),
-                          child: const Text(
-                            '隐藏',
-                            style: TextStyle(color: Colors.white, fontSize: 12),
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               );
             },
           );
         },
+      ),
+    );
+  }
+
+  void _showAlbumMenu(
+    BuildContext context,
+    AssetPathEntity album,
+    bool isHidden,
+  ) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => SimpleDialog(
+        title: Text(album.name),
+        children: [
+          SimpleDialogOption(
+            onPressed: () {
+              Navigator.pop(context);
+              if (isHidden) {
+                SettingsService.instance.unhideAlbum(album.id);
+              } else {
+                SettingsService.instance.hideAlbum(album.id);
+              }
+            },
+            child: Text(isHidden ? '取消隐藏' : '隐藏相册'),
+          ),
+        ],
       ),
     );
   }
